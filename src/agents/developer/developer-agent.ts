@@ -182,10 +182,10 @@ export class DeveloperAgent extends AgentBase {
     const title = `Implement: ${this.issue!.title}`;
     const body = this.generatePullRequestBody(plan);
     
-    this.log('info', 'Creating pull request...');
+    this.log('info', 'Creating pull request with branch...');
     
     try {
-      const pr = await this.githubUtils.createPullRequest(
+      const pr = await this.githubUtils.createPullRequestWithBranch(
         title,
         branchName,
         'main',

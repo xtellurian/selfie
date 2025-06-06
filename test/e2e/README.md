@@ -55,10 +55,22 @@ The test includes:
 ## Test Features
 
 - **Real GitHub Integration**: Uses actual GitHub API calls
+- **Branch Fixture System**: Automatically handles branch conflicts when running on main
 - **Agent Simulation**: Tests real agent behavior with controlled mocking
-- **Cleanup Logic**: Automatically cleans up test artifacts
+- **Cleanup Logic**: Automatically cleans up test artifacts and branches
 - **Error Handling**: Robust error handling and reporting
 - **Timeout Management**: Appropriate timeouts for real-world scenarios
+
+## Branch Management
+
+The E2E tests include a sophisticated branch fixture system that:
+
+1. **Detects Current Branch**: Automatically detects if running on the main branch
+2. **Creates Test Branches**: If on main, creates a temporary test base branch to avoid conflicts
+3. **Handles PR Creation**: Creates PRs against the appropriate base branch
+4. **Automatic Cleanup**: Removes all test branches after test completion
+
+This prevents the common "Reference already exists" error when running tests multiple times on the main branch.
 
 ## Notes
 

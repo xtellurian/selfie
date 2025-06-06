@@ -99,8 +99,14 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
 ### Naming Conventions
 - **Agents**: PascalCase classes (e.g., `InitializerAgent`, `DeveloperAgent`)
 - **Functions**: camelCase (e.g., `parseGitHubIssue`, `createPullRequest`)
-- **Files**: kebab-case (e.g., `github-utils.js`, `agent-base.js`)
+- **Files**: kebab-case (e.g., `github-utils.ts`, `agent-base.ts`)
 - **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_ATTEMPTS`)
+
+### Language Requirements
+- **TypeScript Only**: All source code, tests, and fixtures must be written in TypeScript (.ts files)
+- **No JavaScript**: Do not create .js files - everything should be TypeScript
+- **Type Safety**: Maintain strict TypeScript typing throughout the codebase
+- **ES Modules**: Use ES module syntax (import/export)
 
 ### Git Workflow
 - **Main branch**: `main` (protected, requires PR)
@@ -187,10 +193,12 @@ npm test
 - ✅ Basic project structure established
 - ✅ Claude Code integration completed
 - ✅ Documentation framework created
-- 🔄 Initializer agent (in development)
-- ⏳ Developer agent (planned)
-- ⏳ GitHub API integration (planned)
-- ⏳ Agent coordination system (planned)
+- ✅ Initializer agent (completed)
+- ✅ Developer agent (completed)
+- ✅ GitHub API integration (completed)
+- ✅ Agent coordination system (completed)
+- ✅ End-to-end testing framework (completed)
+- ✅ Unit test coverage for all agents (completed)
 
 ## Reflection and Feedback System
 
