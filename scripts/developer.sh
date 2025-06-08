@@ -5,12 +5,8 @@
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source shared functions
+source "$(dirname "$0")/shared-functions.sh"
 
 # Default configuration
 ISSUE_NUMBER=""
@@ -35,59 +31,7 @@ show_help() {
     echo ""
 }
 
-# Function to log messages
-log() {
-    local level="$1"
-    local message="$2"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    case "$level" in
-        "INFO")
-            echo -e "${GREEN}[INFO]${NC} [$timestamp] $message"
-            ;;
-        "WARN")
-            echo -e "${YELLOW}[WARN]${NC} [$timestamp] $message"
-            ;;
-        "ERROR")
-            echo -e "${RED}[ERROR]${NC} [$timestamp] $message"
-            ;;
-        "DEBUG")
-            if [ "$VERBOSE" = true ]; then
-                echo -e "${BLUE}[DEBUG]${NC} [$timestamp] $message"
-            fi
-            ;;
-    esac
-}
-
-# Function to validate environment
-validate_environment() {
-    log "DEBUG" "Validating environment variables"
-    
-    if [ -z "$GITHUB_TOKEN" ]; then
-        log "ERROR" "GITHUB_TOKEN environment variable is required"
-        exit 1
-    fi
-    
-    if [ -z "$GITHUB_OWNER" ]; then
-        log "ERROR" "GITHUB_OWNER environment variable is required"
-        exit 1
-    fi
-    
-    if [ -z "$GITHUB_REPO" ]; then
-        log "ERROR" "GITHUB_REPO environment variable is required"
-        exit 1
-    fi
-    
-    if [ -z "$ISSUE_NUMBER" ]; then
-        log "ERROR" "--issue parameter is required"
-        show_help
-        exit 1
-    fi
-    
-    log "INFO" "Environment validated successfully"
-    log "DEBUG" "Repository: $GITHUB_OWNER/$GITHUB_REPO"
-    log "DEBUG" "Issue: #$ISSUE_NUMBER"
-}
+# Functions are now in shared-functions.sh
 
 # Function to fetch and analyze issue
 analyze_issue() {
@@ -121,10 +65,7 @@ create_branch() {
     fi
     
     # Check if we're in a git repository
-    if ! git rev-parse --git-dir > /dev/null 2>&1; then
-        log "ERROR" "Not in a git repository"
-        exit 1
-    fi
+    check_git_repo
     
     # Ensure we're on the base branch and up to date
     log "DEBUG" "Switching to base branch: $BASE_BRANCH"
@@ -253,6 +194,12 @@ done
 
 # Main execution
 main() {
+    # Load environment variables
+    load_dotenv
+    
+    # Validate required parameters
+    validate_required_param "issue" "$ISSUE_NUMBER" "Issue number"
+    
     log "INFO" "Developer Agent starting for issue #$ISSUE_NUMBER"
     
     if [ "$DRY_RUN" = true ]; then

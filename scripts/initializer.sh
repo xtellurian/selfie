@@ -5,12 +5,8 @@
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Source shared functions
+source "$(dirname "$0")/shared-functions.sh"
 
 # Default configuration
 POLL_INTERVAL=30
@@ -33,52 +29,7 @@ show_help() {
     echo ""
 }
 
-# Function to log messages
-log() {
-    local level="$1"
-    local message="$2"
-    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    case "$level" in
-        "INFO")
-            echo -e "${GREEN}[INFO]${NC} [$timestamp] $message"
-            ;;
-        "WARN")
-            echo -e "${YELLOW}[WARN]${NC} [$timestamp] $message"
-            ;;
-        "ERROR")
-            echo -e "${RED}[ERROR]${NC} [$timestamp] $message"
-            ;;
-        "DEBUG")
-            if [ "$VERBOSE" = true ]; then
-                echo -e "${BLUE}[DEBUG]${NC} [$timestamp] $message"
-            fi
-            ;;
-    esac
-}
-
-# Function to validate environment
-validate_environment() {
-    log "DEBUG" "Validating environment variables"
-    
-    if [ -z "$GITHUB_TOKEN" ]; then
-        log "ERROR" "GITHUB_TOKEN environment variable is required"
-        exit 1
-    fi
-    
-    if [ -z "$GITHUB_OWNER" ]; then
-        log "ERROR" "GITHUB_OWNER environment variable is required"
-        exit 1
-    fi
-    
-    if [ -z "$GITHUB_REPO" ]; then
-        log "ERROR" "GITHUB_REPO environment variable is required"
-        exit 1
-    fi
-    
-    log "INFO" "Environment validated successfully"
-    log "DEBUG" "Repository: $GITHUB_OWNER/$GITHUB_REPO"
-}
+# Functions are now in shared-functions.sh
 
 # Function to check for new issues
 check_for_issues() {
@@ -180,14 +131,15 @@ done
 main() {
     log "INFO" "Initializer Agent starting"
     
+    # Load environment variables
+    load_dotenv
+    
     if [ "$DRY_RUN" = true ]; then
         log "WARN" "Running in DRY RUN mode - no changes will be made"
     fi
     
     validate_environment
-    
-    # Set up signal handlers for graceful shutdown
-    trap 'log "INFO" "Received shutdown signal, stopping..."; exit 0' SIGINT SIGTERM
+    setup_signal_handlers "Initializer Agent"
     
     monitor_issues
 }

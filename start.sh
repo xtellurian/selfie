@@ -16,6 +16,28 @@ NC='\033[0m' # No Color
 AGENTS_DIR="docs/agents"
 SCRIPTS_DIR="scripts"
 
+# Function to load environment variables from .env file
+load_dotenv() {
+    if [ -f ".env" ]; then
+        echo -e "${BLUE}Loading environment variables from .env${NC}"
+        
+        # Read .env file and export variables
+        while IFS= read -r line || [ -n "$line" ]; do
+            # Skip empty lines and comments
+            if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
+                continue
+            fi
+            
+            # Export the variable
+            if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+                export "${BASH_REMATCH[1]}"="${BASH_REMATCH[2]}"
+            fi
+        done < ".env"
+    else
+        echo -e "${YELLOW}No .env file found - using system environment variables${NC}"
+    fi
+}
+
 # Function to display usage
 show_help() {
     echo -e "${BLUE}Selfie - Agentic Build System${NC}"
@@ -147,6 +169,9 @@ setup_system() {
 run_agent() {
     local agent_name="$1"
     shift # Remove agent name from arguments
+    
+    # Load environment variables first
+    load_dotenv
     
     # Check if agent documentation exists
     agent_doc="$AGENTS_DIR/$agent_name.md"

@@ -30,9 +30,18 @@ The Initializer Agent monitors GitHub issues in the repository and creates appro
 - `--filter <label>` - Only process issues with specific labels
 
 ### Environment Variables
+Environment variables can be set in a `.env` file in the project root or as system environment variables:
+
 - `GITHUB_TOKEN` - GitHub personal access token (required)
 - `GITHUB_OWNER` - Repository owner (required)
 - `GITHUB_REPO` - Repository name (required)
+
+Example `.env` file:
+```bash
+GITHUB_TOKEN=github_pat_your_token_here
+GITHUB_OWNER=your-username
+GITHUB_REPO=your-repository
+```
 
 ### Examples
 ```bash

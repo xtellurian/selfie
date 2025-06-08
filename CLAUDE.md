@@ -148,7 +148,7 @@ Agents are implemented as shell scripts with comprehensive documentation:
 - **Shell Scripts**: Bash for agent implementations and system scripts
 - **TypeScript**: Minimal Node.js library in src/ (hello world functions only)
 - **Markdown**: Comprehensive documentation for all agents
-- **Shell Best Practices**: Use `set -e`, proper quoting, and error handling
+- **Shell Best Practices**: Use `set -e`, proper quoting, error handling, and dotenv loading
 
 ### Git Workflow
 - **Main branch**: `main` (protected, requires PR)
@@ -210,6 +210,8 @@ npm test
 - This is a **shell-based agent system** - agents are implemented as documented bash scripts
 - Always refer to agent documentation in `/docs/agents/` before modifying scripts
 - Test agents with `--dry-run` flags before making changes
+- Environment variables are loaded from `.env` file automatically
+- Use shared functions from `scripts/shared-functions.sh` for common operations
 - Follow the principle of "documentation-driven development"
 - Each agent must have both documentation (.md) and implementation (.sh)
 
