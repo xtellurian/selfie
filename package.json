@@ -6,11 +6,10 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node dist/index.js",
-    "dev": "ts-node-esm src/index.ts",
+    "start": "./start.sh help",
+    "dev": "npm run build && node -e \"console.log(require('./dist/index.js').helloWorld())\"",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:e2e": "jest test/e2e/",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
   },

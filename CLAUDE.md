@@ -12,15 +12,24 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
 
 ### Core Philosophy
 - **Self-Building**: The system creates and modifies its own code
-- **Agentic**: Autonomous agents handle different aspects of development
+- **Agentic**: Shell-based autonomous agents handle different aspects of development
 - **Human-Guided**: Agents respond to human input via GitHub issues
 - **Iterative**: Each phase builds upon the previous one
+- **Documentation-Driven**: Each agent is defined by its documentation in `/docs/agents/`
+
+### Agent Architecture
+
+Agents are implemented as shell scripts with comprehensive documentation:
+- **Agent Documentation**: `/docs/agents/<agent-name>.md` - Defines purpose, usage, and requirements
+- **Agent Scripts**: `/scripts/<agent-name>.sh` - Executable implementation
+- **Dispatcher**: `./start.sh` - Routes commands to appropriate agents
 
 ### Agent Types
 
 #### 1. Initializer Agent
 - **Purpose**: Observe human input and spawn child agentic tasks
-- **Input Source**: GitHub issues in this repository
+- **Documentation**: `/docs/agents/initializer.md`
+- **Script**: `/scripts/initializer.sh`
 - **Trigger**: `./start.sh initializer [options]`
 - **Responsibilities**:
   - Monitor GitHub issues for new development tasks
@@ -30,9 +39,9 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
 
 #### 2. Developer Agent
 - **Purpose**: Transform specifications into working code via pull requests
-- **Trigger**: Spawned by Initializer Agent when development tasks are detected
-- **Input**: Specification from GitHub issue
-- **Output**: Pull Request with implementation
+- **Documentation**: `/docs/agents/developer.md`
+- **Script**: `/scripts/developer.sh`
+- **Trigger**: `./start.sh developer --issue <number> [options]`
 - **Responsibilities**:
   - Analyze development specifications
   - Plan implementation approach
@@ -40,11 +49,27 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
   - Create comprehensive pull requests
   - Handle cases where specs are not completable (post back to original issue)
 
-### Future Agent Types (Planned)
-- **Reviewer Agent**: Code review and quality assurance
-- **Tester Agent**: Automated testing and validation
-- **Documentation Agent**: Maintain project documentation
-- **Deployment Agent**: Handle releases and deployments
+#### 3. Reviewer Agent
+- **Purpose**: Automated code review and quality assurance
+- **Documentation**: `/docs/agents/reviewer.md`
+- **Script**: `/scripts/reviewer.sh`
+- **Trigger**: `./start.sh reviewer --pr <number> [options]`
+- **Responsibilities**:
+  - Analyze pull request changes for quality
+  - Run automated tests and check coverage
+  - Verify code follows project standards
+  - Provide constructive feedback and suggestions
+
+#### 4. Tester Agent
+- **Purpose**: Create comprehensive test suites and validate functionality
+- **Documentation**: `/docs/agents/tester.md`
+- **Script**: `/scripts/tester.sh`
+- **Trigger**: `./start.sh tester [options]`
+- **Responsibilities**:
+  - Generate unit, integration, and e2e tests
+  - Maintain and update existing test suites
+  - Run comprehensive test validation
+  - Report test coverage and quality metrics
 
 ## Entry Points
 
@@ -58,11 +83,20 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
 # Start the initializer agent
 ./start.sh initializer
 
-# Start a specific developer task
-./start.sh developer --issue-number 123
+# Start a developer task for a specific issue
+./start.sh developer --issue 123
 
-# View available agent types
-./start.sh --help
+# Review a pull request
+./start.sh reviewer --pr 456
+
+# Generate tests for specific code
+./start.sh tester --target src/new-feature.ts
+
+# System commands
+./start.sh setup    # Initialize the agent system
+./start.sh list     # List all available agents
+./start.sh help     # Show help message
+./start.sh version  # Show version information
 ```
 
 ## Development Workflow
@@ -87,26 +121,34 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
 ### File Organization
 ```
 /
-├── agents/              # Agent implementations
-│   ├── initializer/     # Initializer agent code
-│   ├── developer/       # Developer agent code
-│   └── shared/          # Shared utilities
 ├── docs/                # Documentation
-├── start.sh             # Main entry point
+│   └── agents/          # Agent documentation
+│       ├── initializer.md
+│       ├── developer.md
+│       ├── reviewer.md
+│       └── tester.md
+├── scripts/             # Agent implementations
+│   ├── initializer.sh
+│   ├── developer.sh
+│   ├── reviewer.sh
+│   └── tester.sh
+├── src/                 # TypeScript library (minimal)
+│   └── index.ts         # Hello world functions
+├── start.sh             # Main entry point and dispatcher
 └── CLAUDE.md           # This file (project memory)
 ```
 
 ### Naming Conventions
-- **Agents**: PascalCase classes (e.g., `InitializerAgent`, `DeveloperAgent`)
-- **Functions**: camelCase (e.g., `parseGitHubIssue`, `createPullRequest`)
-- **Files**: kebab-case (e.g., `github-utils.ts`, `agent-base.ts`)
-- **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_RETRY_ATTEMPTS`)
+- **Agent Scripts**: kebab-case with .sh extension (e.g., `initializer.sh`, `developer.sh`)
+- **Agent Documentation**: kebab-case with .md extension (e.g., `initializer.md`, `developer.md`)
+- **Shell Functions**: snake_case (e.g., `validate_environment`, `create_pull_request`)
+- **Environment Variables**: UPPER_SNAKE_CASE (e.g., `GITHUB_TOKEN`, `POLL_INTERVAL`)
 
 ### Language Requirements
-- **TypeScript Only**: All source code, tests, and fixtures must be written in TypeScript (.ts files)
-- **No JavaScript**: Do not create .js files - everything should be TypeScript
-- **Type Safety**: Maintain strict TypeScript typing throughout the codebase
-- **ES Modules**: Use ES module syntax (import/export)
+- **Shell Scripts**: Bash for agent implementations and system scripts
+- **TypeScript**: Minimal Node.js library in src/ (hello world functions only)
+- **Markdown**: Comprehensive documentation for all agents
+- **Shell Best Practices**: Use `set -e`, proper quoting, and error handling
 
 ### Git Workflow
 - **Main branch**: `main` (protected, requires PR)
@@ -116,89 +158,103 @@ We are currently in **Phase 1: Initialization**. During this phase, we are build
 ## Key Technologies
 
 ### Runtime Environment
-- **Node.js**: Primary runtime for agent execution
-- **Shell Scripts**: System integration and startup
+- **Bash**: Primary runtime for agent execution
+- **Node.js**: Minimal TypeScript library compilation and hello world functions
 - **Git**: Version control and collaboration
+- **GitHub CLI**: Optional integration for advanced GitHub operations
 
 ### Integration Points
-- **GitHub API**: Issue monitoring and PR creation
+- **GitHub API**: Issue monitoring and PR creation via curl/wget
 - **Claude Code**: AI-powered development assistance
-- **GitHub Actions**: CI/CD pipeline (future)
+- **GitHub Actions**: CI/CD pipeline for agent validation
+- **Shell Environment**: Direct system integration and process management
 
 ## Common Commands
 
 ### Development Commands
 ```bash
-# Install dependencies (when package.json exists)
-npm install
+# Initialize the agent system
+./start.sh setup
 
-# Run tests (when test suite exists)
+# Build TypeScript library
+npm run build
+
+# Run TypeScript tests
 npm test
 
-# Start development mode
-./start.sh --dev
+# List available agents
+./start.sh list
 
-# Check agent status
-./start.sh status
+# Show system version
+./start.sh version
 ```
 
 ### Agent Commands
 ```bash
-# List all issues assigned to agents
-./start.sh issues list
+# Start monitoring for issues
+./start.sh initializer
 
-# Check agent health
-./start.sh health-check
+# Implement a specific issue
+./start.sh developer --issue 123
 
-# Force agent restart
-./start.sh restart [agent-type]
+# Review a pull request
+./start.sh reviewer --pr 456
+
+# Generate tests for code
+./start.sh tester --target src/
 ```
 
 ## Important Notes
 
 ### For Claude Code Sessions
-- This is a **self-modifying system** - be cautious with changes
-- Always test agents in isolated environments first
-- Agent code should be robust and handle edge cases
-- Follow the principle of "agents building agents"
+- This is a **shell-based agent system** - agents are implemented as documented bash scripts
+- Always refer to agent documentation in `/docs/agents/` before modifying scripts
+- Test agents with `--dry-run` flags before making changes
+- Follow the principle of "documentation-driven development"
+- Each agent must have both documentation (.md) and implementation (.sh)
 
 ### Error Handling
-- Agents must gracefully handle API failures
-- All agent actions should be logged
-- Failed tasks should report back to originating issues
-- System should be resilient to individual agent failures
+- Shell scripts must use `set -e` for proper error handling
+- All agent actions should be logged with timestamps
+- Failed tasks should report back to originating issues via GitHub comments
+- Use proper exit codes (0 for success, non-zero for errors)
+- Validate environment variables and parameters before execution
 
 ### Security Considerations
-- Agents have write access to the repository
-- Validate all external inputs thoroughly
-- Use least-privilege principles for API access
-- Monitor agent behavior for unexpected patterns
+- Shell scripts should validate all inputs and environment variables
+- Use proper quoting to prevent injection attacks
+- GitHub tokens should be stored securely as environment variables
+- Limit agent permissions to only what's necessary
+- Log all agent activities for audit trails
 
 ## Getting Started
 
 ### For New Contributors
 1. Read this CLAUDE.md file thoroughly
-2. Review existing agent implementations in `/agents/`
-3. Check current GitHub issues for context
-4. Run `./start.sh --help` to understand available commands
+2. Review agent documentation in `/docs/agents/`
+3. Check agent implementations in `/scripts/`
+4. Run `./start.sh setup` to initialize the system
+5. Run `./start.sh help` to understand available commands
 
 ### For Claude Code Sessions
-1. Start with: `/init` to understand current project state
-2. Use: `summarize this project` to get oriented
-3. Check: `list current GitHub issues` to see active tasks
+1. Start with: `./start.sh list` to see available agents
+2. Check: agent documentation before modifying any scripts
+3. Use: `--dry-run` flags to test changes safely
 4. Always consider: How does this change support the self-building philosophy?
+5. Follow: documentation-driven development - update docs first, then implementation
 
 ## Project Status
 
-- ✅ Basic project structure established
-- ✅ Claude Code integration completed
-- ✅ Documentation framework created
-- ✅ Initializer agent (completed)
-- ✅ Developer agent (completed)
-- ✅ GitHub API integration (completed)
-- ✅ Agent coordination system (completed)
-- ✅ End-to-end testing framework (completed)
-- ✅ Unit test coverage for all agents (completed)
+- ✅ Shell-based agent architecture implemented
+- ✅ Agent documentation framework created (`/docs/agents/`)
+- ✅ Agent dispatcher system (`./start.sh`)
+- ✅ Initializer agent documentation and script
+- ✅ Developer agent documentation and script
+- ✅ Reviewer agent documentation (script template)
+- ✅ Tester agent documentation (script template)
+- ✅ Minimal TypeScript library with hello world functions
+- ⚠️ GitHub API integration (needs implementation in shell scripts)
+- ⚠️ End-to-end testing (needs adaptation to shell-based system)
 
 ## Reflection and Feedback System
 
