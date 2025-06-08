@@ -4,49 +4,76 @@
 
 **Selfie** is an agentic build system that builds itself. This is a revolutionary approach to software development where the system evolves and improves through autonomous agents that respond to human input and create their own development tasks.
 
-## Current Phase: Initialization
+## Current Phase: MCP Server Development
 
-We are currently in **Phase 1: Initialization**. During this phase, we are building the foundational automations that will enable the system to create changes to itself based on human input.
+We are currently in **Phase 1: MCP Server Development**. During this phase, we are building a Model Context Protocol (MCP) server that enables Selfie instances to interact with each other. This MCP server is the foundational automation layer that will enable the system to create changes to itself based on human input and coordinate between multiple Selfie instances.
+
+### MCP Server Goals
+
+The Selfie MCP server provides:
+- **Inter-Selfie Communication**: Enables one Selfie instance to interact with other Selfie instances
+- **Agent Coordination**: Allows an initializer Selfie to spawn and coordinate developer Selfie instances
+- **Task Distribution**: Distributes development tasks across multiple Selfie instances
+- **Resource Management**: Manages shared resources and prevents conflicts between instances
+- **State Synchronization**: Keeps multiple Selfie instances synchronized on project state
 
 ## System Architecture
 
 ### Core Philosophy
 - **Self-Building**: The system creates and modifies its own code
+- **MCP-Enabled**: Multiple Selfie instances communicate via Model Context Protocol
 - **Agentic**: Shell-based autonomous agents handle different aspects of development
 - **Human-Guided**: Agents respond to human input via GitHub issues
 - **Iterative**: Each phase builds upon the previous one
 - **Documentation-Driven**: Each agent is defined by its documentation in `/docs/agents/`
 
-### Agent Architecture
+### System Architecture
 
-Agents are implemented as shell scripts with comprehensive documentation:
+The system consists of three main components:
+
+#### 1. MCP Server (`src/mcp-server/`)
+- **Purpose**: Enables inter-Selfie communication and coordination
+- **Protocol**: Implements Model Context Protocol for agent interaction
+- **Capabilities**: Task distribution, state management, resource coordination
+- **Implementation**: TypeScript server following MCP SDK patterns
+
+#### 2. Shell-Based Agents (`scripts/`)
 - **Agent Documentation**: `/docs/agents/<agent-name>.md` - Defines purpose, usage, and requirements
 - **Agent Scripts**: `/scripts/<agent-name>.sh` - Executable implementation
+- **MCP Integration**: Agents communicate with other Selfie instances via MCP server
 - **Dispatcher**: `./start.sh` - Routes commands to appropriate agents
+
+#### 3. TypeScript Library (`src/`)
+- **Core Functions**: Basic utility functions and hello world examples
+- **MCP Client**: Client functions for interacting with MCP servers
+- **Shared Types**: TypeScript types shared between components
 
 ### Agent Types
 
 #### 1. Initializer Agent
-- **Purpose**: Observe human input and spawn child agentic tasks
+- **Purpose**: Observe human input and spawn child agentic tasks via MCP
 - **Documentation**: `/docs/agents/initializer.md`
 - **Script**: `/scripts/initializer.sh`
 - **Trigger**: `./start.sh initializer [options]`
+- **MCP Integration**: Uses MCP server to coordinate with other Selfie instances
 - **Responsibilities**:
   - Monitor GitHub issues for new development tasks
   - Parse and understand human requirements
-  - Create appropriate child agent tasks
-  - Route tasks to the correct specialized agents
+  - Create appropriate child agent tasks via MCP calls
+  - Route tasks to the correct specialized agents across instances
 
 #### 2. Developer Agent
 - **Purpose**: Transform specifications into working code via pull requests
 - **Documentation**: `/docs/agents/developer.md`
 - **Script**: `/scripts/developer.sh`
-- **Trigger**: `./start.sh developer --issue <number> [options]`
+- **Trigger**: `./start.sh developer --issue <number> [options]` or spawned via MCP
+- **MCP Integration**: Can be spawned by initializer agents via MCP calls
 - **Responsibilities**:
   - Analyze development specifications
   - Plan implementation approach
   - Write code to meet specifications
   - Create comprehensive pull requests
+  - Report status back to coordinating instances via MCP
   - Handle cases where specs are not completable (post back to original issue)
 
 #### 3. Reviewer Agent
@@ -128,12 +155,23 @@ Agents are implemented as shell scripts with comprehensive documentation:
 │       ├── reviewer.md
 │       └── tester.md
 ├── scripts/             # Agent implementations
+│   ├── shared-functions.sh
 │   ├── initializer.sh
 │   ├── developer.sh
 │   ├── reviewer.sh
 │   └── tester.sh
-├── src/                 # TypeScript library (minimal)
-│   └── index.ts         # Hello world functions
+├── src/                 # TypeScript components
+│   ├── mcp-server/      # MCP server implementation
+│   │   ├── index.ts     # Server entry point
+│   │   ├── handlers/    # MCP request handlers
+│   │   ├── types/       # MCP-specific types
+│   │   └── utils/       # Server utilities
+│   ├── mcp-client/      # MCP client functions
+│   └── index.ts         # Core library functions
+├── test/                # Test suites
+│   ├── mcp-server/      # MCP server tests
+│   ├── mcp-client/      # MCP client tests
+│   └── index.test.ts    # Core library tests
 ├── start.sh             # Main entry point and dispatcher
 └── CLAUDE.md           # This file (project memory)
 ```
@@ -146,9 +184,11 @@ Agents are implemented as shell scripts with comprehensive documentation:
 
 ### Language Requirements
 - **Shell Scripts**: Bash for agent implementations and system scripts
-- **TypeScript**: Minimal Node.js library in src/ (hello world functions only)
+- **TypeScript**: MCP server implementation following TypeScript SDK patterns
+- **MCP Protocol**: Model Context Protocol for inter-instance communication
 - **Markdown**: Comprehensive documentation for all agents
 - **Shell Best Practices**: Use `set -e`, proper quoting, error handling, and dotenv loading
+- **Testing**: Unit and integration tests for all MCP server functionality
 
 ### Git Workflow
 - **Main branch**: `main` (protected, requires PR)
@@ -159,15 +199,18 @@ Agents are implemented as shell scripts with comprehensive documentation:
 
 ### Runtime Environment
 - **Bash**: Primary runtime for agent execution
-- **Node.js**: Minimal TypeScript library compilation and hello world functions
+- **Node.js**: MCP server runtime and TypeScript compilation
+- **MCP Protocol**: Inter-instance communication protocol
 - **Git**: Version control and collaboration
 - **GitHub CLI**: Optional integration for advanced GitHub operations
 
 ### Integration Points
-- **GitHub API**: Issue monitoring and PR creation via curl/wget
+- **MCP Server**: Central coordination point for Selfie instances
+- **GitHub API**: Issue monitoring and PR creation via shell scripts and MCP
 - **Claude Code**: AI-powered development assistance
 - **GitHub Actions**: CI/CD pipeline for agent validation
 - **Shell Environment**: Direct system integration and process management
+- **Inter-Process Communication**: MCP-based coordination between instances
 
 ## Common Commands
 
@@ -176,11 +219,14 @@ Agents are implemented as shell scripts with comprehensive documentation:
 # Initialize the agent system
 ./start.sh setup
 
-# Build TypeScript library
+# Build TypeScript (including MCP server)
 npm run build
 
-# Run TypeScript tests
+# Run all tests (including MCP server tests)
 npm test
+
+# Start MCP server
+npm run mcp-server
 
 # List available agents
 ./start.sh list
@@ -191,7 +237,7 @@ npm test
 
 ### Agent Commands
 ```bash
-# Start monitoring for issues
+# Start monitoring for issues (with MCP coordination)
 ./start.sh initializer
 
 # Implement a specific issue
@@ -202,6 +248,18 @@ npm test
 
 # Generate tests for code
 ./start.sh tester --target src/
+```
+
+### MCP Commands
+```bash
+# Start the MCP server for inter-instance communication
+npm run mcp-server
+
+# Test MCP server connectivity
+npm run test:mcp
+
+# Run MCP integration tests
+npm run test:integration
 ```
 
 ## Important Notes
@@ -247,6 +305,7 @@ npm test
 
 ## Project Status
 
+### Phase 1: MCP Server Development
 - ✅ Shell-based agent architecture implemented
 - ✅ Agent documentation framework created (`/docs/agents/`)
 - ✅ Agent dispatcher system (`./start.sh`)
@@ -254,9 +313,16 @@ npm test
 - ✅ Developer agent documentation and script
 - ✅ Reviewer agent documentation (script template)
 - ✅ Tester agent documentation (script template)
-- ✅ Minimal TypeScript library with hello world functions
-- ⚠️ GitHub API integration (needs implementation in shell scripts)
-- ⚠️ End-to-end testing (needs adaptation to shell-based system)
+- ✅ Core TypeScript library with hello world functions
+- 🚧 **MCP Server Implementation** (current focus)
+  - ⚠️ MCP server directory structure (needs creation)
+  - ⚠️ MCP TypeScript SDK integration (needs implementation)
+  - ⚠️ Inter-Selfie communication handlers (needs implementation)
+  - ⚠️ Task coordination and distribution (needs implementation)
+  - ⚠️ MCP server unit tests (needs implementation)
+  - ⚠️ MCP integration tests (needs implementation)
+- ⚠️ GitHub API integration via MCP (needs implementation)
+- ⚠️ Agent-to-MCP integration (needs shell script updates)
 
 ## Reflection and Feedback System
 

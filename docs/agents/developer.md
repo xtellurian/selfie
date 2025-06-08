@@ -2,12 +2,13 @@
 ## Transforms specifications into working code via pull requests
 
 ### Purpose
-The Developer Agent takes development specifications from GitHub issues and implements them by creating working code, tests, and documentation. It operates autonomously to create pull requests that fulfill the specified requirements.
+The Developer Agent takes development specifications from GitHub issues and implements them by creating working code, tests, and documentation. It operates autonomously to create pull requests that fulfill the specified requirements. Can be spawned by Initializer Agents via MCP calls or run independently.
 
 ### Input Source
-- Spawned by Initializer Agent with specific issue numbers
+- Spawned by Initializer Agent via MCP calls with specific issue numbers
 - GitHub issue containing development specifications
 - Can be manually triggered for specific issues
+- MCP coordination messages from other Selfie instances
 
 ### Responsibilities
 - Analyze development specifications from GitHub issues
@@ -16,7 +17,9 @@ The Developer Agent takes development specifications from GitHub issues and impl
 - Create or update tests for the implementation
 - Update documentation as needed
 - Create comprehensive pull requests
-- Handle cases where specs are not completable (report back to issue)
+- Report progress and status back to coordinating Selfie instances via MCP
+- Handle cases where specs are not completable (report back to issue and MCP coordinator)
+- Coordinate with other developer instances to prevent conflicts
 
 ### Usage
 ```bash
@@ -29,6 +32,8 @@ The Developer Agent takes development specifications from GitHub issues and impl
 - `--base <branch>` - Base branch for PR (default: main)
 - `--dry-run` - Analyze and plan without making changes
 - `--verbose` - Enable verbose logging
+- `--mcp-server <url>` - MCP server URL for coordination (default: http://localhost:3000)
+- `--coordinator-id <id>` - ID of the coordinating Selfie instance (for MCP spawned agents)
 
 ### Environment Variables
 Environment variables can be set in a `.env` file in the project root or as system environment variables:
@@ -36,12 +41,16 @@ Environment variables can be set in a `.env` file in the project root or as syst
 - `GITHUB_TOKEN` - GitHub personal access token (required)
 - `GITHUB_OWNER` - Repository owner (required)
 - `GITHUB_REPO` - Repository name (required)
+- `MCP_SERVER_URL` - MCP server URL for coordination (optional, default: http://localhost:3000)
+- `SELFIE_INSTANCE_ID` - Unique identifier for this Selfie instance (optional, auto-generated)
 
 Example `.env` file:
 ```bash
 GITHUB_TOKEN=github_pat_your_token_here
 GITHUB_OWNER=your-username
 GITHUB_REPO=your-repository
+MCP_SERVER_URL=http://localhost:3000
+SELFIE_INSTANCE_ID=developer-worker-1
 ```
 
 ### Examples

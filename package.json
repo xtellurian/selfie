@@ -8,8 +8,11 @@
     "build": "tsc",
     "start": "./start.sh help",
     "dev": "npm run build && node -e \"console.log(require('./dist/index.js').helloWorld())\"",
+    "mcp-server": "npm run build && node dist/mcp-server/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:mcp": "jest test/mcp-server test/mcp-client",
+    "test:integration": "jest test/mcp-server --testNamePattern=integration",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -22,14 +25,17 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@octokit/rest": "^20.0.2",
     "axios": "^1.6.2",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.54.0",
@@ -49,6 +55,7 @@
     ],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
-    }
+    },
+    "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"]
   }
 }

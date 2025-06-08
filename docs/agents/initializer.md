@@ -1,8 +1,8 @@
 # Initializer Agent
-## Observes human input and spawns child agentic tasks
+## Observes human input and spawns child agentic tasks via MCP
 
 ### Purpose
-The Initializer Agent monitors GitHub issues in the repository and creates appropriate child agent tasks when new development work is requested. It serves as the primary entry point for human-initiated development tasks.
+The Initializer Agent monitors GitHub issues in the repository and creates appropriate child agent tasks when new development work is requested. It serves as the primary entry point for human-initiated development tasks and coordinates with other Selfie instances via the Model Context Protocol (MCP) server.
 
 ### Input Source
 - GitHub issues in this repository
@@ -14,9 +14,11 @@ The Initializer Agent monitors GitHub issues in the repository and creates appro
 - Monitor GitHub issues for new development tasks
 - Parse and understand human requirements from issue descriptions
 - Validate that issues are properly formatted and actionable
-- Route tasks to the correct specialized agents
-- Create child agent processes with appropriate parameters
+- Route tasks to the correct specialized agents via MCP calls
+- Create child agent processes with appropriate parameters across Selfie instances
+- Coordinate with other Selfie instances via MCP server
 - Track agent status and report back to issues
+- Manage resource allocation and prevent conflicts between instances
 
 ### Usage
 ```bash
@@ -28,6 +30,8 @@ The Initializer Agent monitors GitHub issues in the repository and creates appro
 - `--dry-run` - Show what would be done without actually doing it
 - `--verbose` - Enable verbose logging
 - `--filter <label>` - Only process issues with specific labels
+- `--mcp-server <url>` - MCP server URL for coordination (default: http://localhost:3000)
+- `--max-instances <number>` - Maximum number of developer instances to spawn (default: 3)
 
 ### Environment Variables
 Environment variables can be set in a `.env` file in the project root or as system environment variables:
@@ -35,12 +39,16 @@ Environment variables can be set in a `.env` file in the project root or as syst
 - `GITHUB_TOKEN` - GitHub personal access token (required)
 - `GITHUB_OWNER` - Repository owner (required)
 - `GITHUB_REPO` - Repository name (required)
+- `MCP_SERVER_URL` - MCP server URL for coordination (optional, default: http://localhost:3000)
+- `SELFIE_INSTANCE_ID` - Unique identifier for this Selfie instance (optional, auto-generated)
 
 Example `.env` file:
 ```bash
 GITHUB_TOKEN=github_pat_your_token_here
 GITHUB_OWNER=your-username
 GITHUB_REPO=your-repository
+MCP_SERVER_URL=http://localhost:3000
+SELFIE_INSTANCE_ID=initializer-main
 ```
 
 ### Examples
