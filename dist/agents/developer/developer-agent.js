@@ -6,7 +6,7 @@
  * them by writing code, tests, and creating pull requests using Claude CLI.
  */
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { join, dirname } from 'path';
 import { Octokit } from '@octokit/rest';
 import dotenv from 'dotenv';
@@ -200,15 +200,37 @@ Return ONLY valid JSON in this format:
   "prDescription": "Implements new feature as requested in issue #${this.config.issueNumber}\\n\\n- Feature description\\n- Implementation details\\n\\nCloses #${this.config.issueNumber}"
 }`;
         const claudePath = this.config.claudePath || 'claude';
-        const result = execSync(`${claudePath} --prompt "${prompt.replace(/"/g, '\\"')}"`, {
-            encoding: 'utf8',
-            cwd: this.config.workingDirectory
-        });
+        // Use temporary file to avoid shell escaping issues completely
+        const tempFile = join(this.config.workingDirectory, `.claude-prompt-${Date.now()}.txt`);
+        writeFileSync(tempFile, prompt, 'utf8');
         try {
-            return JSON.parse(result.trim());
+            const result = execSync(`${claudePath} --print < "${tempFile}"`, {
+                encoding: 'utf8',
+                cwd: this.config.workingDirectory
+            });
+            try {
+                // Clean the response - remove markdown code blocks if present
+                let cleanResult = result.trim();
+                if (cleanResult.startsWith('```json')) {
+                    cleanResult = cleanResult.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+                }
+                else if (cleanResult.startsWith('```')) {
+                    cleanResult = cleanResult.replace(/^```\s*/, '').replace(/\s*```$/, '');
+                }
+                return JSON.parse(cleanResult);
+            }
+            catch (error) {
+                throw new Error(`Failed to parse implementation plan: ${result}`);
+            }
         }
-        catch (error) {
-            throw new Error(`Failed to parse implementation plan: ${result}`);
+        finally {
+            // Clean up temp file
+            try {
+                unlinkSync(tempFile);
+            }
+            catch {
+                // Ignore cleanup errors
+            }
         }
     }
     async createFeatureBranch(branchName) {
@@ -273,12 +295,26 @@ IMPLEMENTATION REQUIREMENTS:
 
 Generate the complete file content. Do not include markdown code blocks or explanations - return only the file content.`;
         const claudePath = this.config.claudePath || 'claude';
-        const result = execSync(`${claudePath} --prompt "${prompt.replace(/"/g, '\\"')}"`, {
-            encoding: 'utf8',
-            cwd: this.config.workingDirectory
-        });
-        // Write the generated content
-        writeFileSync(fullPath, result.trim(), 'utf8');
+        // Use temporary file to avoid shell escaping issues completely
+        const tempFile = join(this.config.workingDirectory, `.claude-prompt-${Date.now()}.txt`);
+        writeFileSync(tempFile, prompt, 'utf8');
+        try {
+            const result = execSync(`${claudePath} --print < "${tempFile}"`, {
+                encoding: 'utf8',
+                cwd: this.config.workingDirectory
+            });
+            // Write the generated content
+            writeFileSync(fullPath, result.trim(), 'utf8');
+        }
+        finally {
+            // Clean up temp file
+            try {
+                unlinkSync(tempFile);
+            }
+            catch {
+                // Ignore cleanup errors
+            }
+        }
     }
     async gatherFileContext() {
         const contexts = [];

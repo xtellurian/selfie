@@ -207,10 +207,125 @@ The system consists of three main components:
 ### Integration Points
 - **MCP Server**: Central coordination point for Selfie instances
 - **GitHub API**: Issue monitoring and PR creation via shell scripts and MCP
+- **Claude CLI**: AI-powered code generation and implementation planning
 - **Claude Code**: AI-powered development assistance
 - **GitHub Actions**: CI/CD pipeline for agent validation
 - **Shell Environment**: Direct system integration and process management
 - **Inter-Process Communication**: MCP-based coordination between instances
+
+## Claude CLI Integration
+
+The Developer Agent uses Claude CLI for intelligent code generation and implementation planning. The Claude CLI provides both interactive and non-interactive modes for AI-powered development assistance.
+
+### Installation and Setup
+Ensure Claude CLI is installed and available in your PATH:
+```bash
+# Check if Claude CLI is available
+claude --version
+
+# Check Claude CLI health
+claude doctor
+
+# Update to latest version
+claude update
+```
+
+### Basic Usage
+```bash
+# Interactive mode (default)
+claude "Write a TypeScript function to add two numbers"
+
+# Non-interactive mode (essential for scripting)
+claude --print "Write a TypeScript function to add two numbers"
+
+# JSON output format
+claude --print --output-format json "Generate a JSON response"
+
+# Stream JSON for real-time output
+claude --print --output-format stream-json "Long prompt here"
+```
+
+### Developer Agent Integration
+The Developer Agent uses Claude CLI in non-interactive mode for:
+
+#### Implementation Planning
+```bash
+claude --print "Analyze this GitHub issue and create a detailed implementation plan..."
+```
+
+#### Code Generation
+```bash
+claude --print "Generate TypeScript code for this file specification..."
+```
+
+### Key Options for Agent Usage
+- `--print` / `-p`: **Required** - Print response and exit (essential for scripting)
+- `--output-format`: Control output format (`text`, `json`, `stream-json`)
+- `--model`: Specify model (e.g. `sonnet`, `opus`, or full model name like `claude-sonnet-4-20250514`)
+- `--debug`: Enable debug mode for troubleshooting
+- `--continue` / `-c`: Continue previous conversation
+- `--resume`: Resume specific conversation by ID
+
+### Configuration Commands
+```bash
+# View current configuration
+claude config
+
+# Set global theme
+claude config set -g theme dark
+
+# Manage MCP servers
+claude mcp
+
+# Check system health
+claude doctor
+```
+
+### Agent Implementation Pattern
+```typescript
+// In TypeScript agent code
+const claudePath = this.config.claudePath || 'claude';
+const result = execSync(`${claudePath} --print "${prompt.replace(/"/g, '\\"')}"`, {
+  encoding: 'utf8',
+  cwd: this.config.workingDirectory
+});
+```
+
+### Best Practices for Agent Integration
+1. **Always use `--print`** for non-interactive agent execution
+2. **Escape quotes properly** in prompts: `"prompt with \"quotes\""`
+3. **Use specific models** when needed: `--model sonnet`
+4. **Handle errors gracefully** with try-catch blocks
+5. **Validate JSON responses** from Claude CLI output
+6. **Set appropriate timeouts** for long-running prompts
+7. **Use structured prompts** for consistent output formats
+
+### Environment Variables
+Configure Claude CLI behavior through environment variables:
+```bash
+# Set default Claude CLI path
+export CLAUDE_PATH="/usr/local/bin/claude"
+
+# Configure model preference
+export CLAUDE_MODEL="sonnet"
+```
+
+### Error Handling
+```typescript
+try {
+  const result = execSync(`${claudePath} --print "${prompt}"`, {
+    encoding: 'utf8',
+    cwd: this.config.workingDirectory,
+    timeout: 60000 // 1 minute timeout
+  });
+  return JSON.parse(result.trim());
+} catch (error) {
+  if (error.code === 'ENOENT') {
+    throw new Error('Claude CLI not found. Please install Claude CLI.');
+  }
+  throw new Error(`Claude CLI error: ${error.message}`);
+}
+```
 
 ## Common Commands
 

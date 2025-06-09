@@ -184,7 +184,7 @@ describe('DeveloperAgent', () => {
       };
 
       mockExecSync.mockImplementation((command: string) => {
-        if (command.includes('mock-claude') && command.includes('--prompt')) {
+        if (command.includes('mock-claude') && command.includes('--print')) {
           return JSON.stringify(mockPlan);
         }
         return 'version info';
@@ -211,7 +211,7 @@ describe('DeveloperAgent', () => {
 
     it('should throw error if Claude returns invalid JSON', async () => {
       mockExecSync.mockImplementation((command: string) => {
-        if (command.includes('mock-claude') && command.includes('--prompt')) {
+        if (command.includes('mock-claude') && command.includes('--print')) {
           return 'invalid json';
         }
         return 'version info';
@@ -260,7 +260,7 @@ describe('DeveloperAgent', () => {
         if (command.includes('find')) {
           return 'src/index.ts\nsrc/other.ts\n';
         }
-        if (command.includes('mock-claude') && command.includes('--prompt')) {
+        if (command.includes('mock-claude') && command.includes('--print')) {
           return 'generated file content';
         }
         return 'version info';
@@ -299,7 +299,7 @@ describe('DeveloperAgent', () => {
       mockReadFileSync.mockReturnValue('existing content');
 
       mockExecSync.mockImplementation((command: string) => {
-        if (command.includes('mock-claude') && command.includes('--prompt')) {
+        if (command.includes('mock-claude') && command.includes('--print')) {
           return 'updated file content';
         }
         return 'mock output';
@@ -458,11 +458,8 @@ describe('DeveloperAgent', () => {
       };
 
       mockExecSync.mockImplementation((command: string) => {
-        if (command.includes('mock-claude') && command.includes('--prompt')) {
-          if (command.includes('implementation plan')) {
-            return JSON.stringify(mockPlan);
-          }
-          return 'generated code';
+        if (command.includes('mock-claude') && command.includes('--print')) {
+          return JSON.stringify(mockPlan);
         }
         if (command.includes('git diff --staged --quiet')) {
           throw new Error('Changes available');
