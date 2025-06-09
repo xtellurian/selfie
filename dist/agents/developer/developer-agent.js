@@ -1,245 +1,446 @@
-import { AgentBase } from '../shared/agent-base.js';
-import { GitHubUtils } from '../shared/github-utils.js';
-export class DeveloperAgent extends AgentBase {
-    githubUtils;
-    issueNumber;
-    issue;
-    constructor(options) {
-        super(`DeveloperAgent-${options.issueNumber}`, options);
-        this.githubUtils = new GitHubUtils(options.githubToken, options.owner, options.repo);
-        this.issueNumber = options.issueNumber;
+#!/usr/bin/env node
+/**
+ * Developer Agent
+ *
+ * Autonomous agent that takes GitHub issue specifications and implements
+ * them by writing code, tests, and creating pull requests using Claude CLI.
+ */
+import { execSync } from 'child_process';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { Octokit } from '@octokit/rest';
+import dotenv from 'dotenv';
+import { SelfieMCPClient } from '../../mcp-client/index.js';
+// Load environment variables
+dotenv.config();
+export class DeveloperAgent {
+    config;
+    octokit;
+    instanceId;
+    mcpClient = null;
+    currentTaskId = null;
+    constructor(config) {
+        this.config = config;
+        this.octokit = new Octokit({
+            auth: config.githubToken
+        });
+        this.instanceId = `developer-${Date.now()}`;
+        // Initialize MCP client if server command provided
+        if (config.mcpServerCommand) {
+            this.mcpClient = new SelfieMCPClient({
+                serverCommand: config.mcpServerCommand,
+                serverArgs: config.mcpServerArgs,
+                workingDirectory: config.workingDirectory
+            });
+        }
+        // Validate required tools
+        this.validateEnvironment();
     }
-    async initialize() {
-        this.log('info', `Initializing developer agent for issue #${this.issueNumber}`);
+    validateEnvironment() {
+        // Check if Claude CLI is available
         try {
-            this.issue = await this.githubUtils.getIssue(this.issueNumber);
-            this.log('info', `Loaded issue: ${this.issue.title}`);
+            const claudePath = this.config.claudePath || 'claude';
+            execSync(`${claudePath} --version`, { stdio: 'pipe' });
         }
         catch (error) {
-            this.log('error', 'Failed to load issue:', error);
-            throw error;
+            throw new Error('Claude CLI not found. Please install Claude CLI and ensure it\'s in PATH.');
+        }
+        // Check git
+        try {
+            execSync('git --version', { stdio: 'pipe' });
+        }
+        catch (error) {
+            throw new Error('Git not found. Please install Git.');
+        }
+        // Validate GitHub token
+        if (!this.config.githubToken) {
+            throw new Error('GitHub token is required');
         }
     }
-    async run() {
-        if (!this.issue) {
-            throw new Error('Issue not loaded during initialization');
-        }
+    /**
+     * Main entry point - develop a solution for the given issue
+     */
+    async develop() {
+        console.log(`🤖 Developer agent starting work on issue #${this.config.issueNumber}`);
         try {
-            // Parse the issue specification
-            const specification = this.parseIssueSpecification(this.issue);
-            // Analyze the implementation requirements
-            const implementationPlan = await this.analyzeImplementation(specification);
-            // Check if the specification is completable
-            if (!implementationPlan.isCompletable) {
-                await this.reportUncompletableSpec(implementationPlan.reason || 'Specification cannot be completed');
-                return;
+            // Step 1: Register with MCP server
+            await this.registerWithMCP();
+            // Step 2: Claim the issue resource
+            await this.claimIssue();
+            // Step 3: Fetch and parse the issue
+            const issueSpec = await this.fetchIssue();
+            console.log(`📋 Issue: ${issueSpec.title}`);
+            // Step 4: Generate implementation plan using Claude
+            const plan = await this.generateImplementationPlan(issueSpec);
+            console.log(`📝 Plan: ${plan.files.length} files to implement`);
+            // Step 5: Create feature branch
+            const branchName = await this.createFeatureBranch(plan.branchName);
+            console.log(`🌿 Created branch: ${branchName}`);
+            // Step 6: Implement each file using Claude
+            for (const file of plan.files) {
+                await this.implementFile(file, issueSpec);
+                console.log(`✅ Implemented: ${file.path}`);
             }
-            // Create implementation branch
-            const branchName = await this.createImplementationBranch();
-            // Implement the features
-            await this.implementFeatures(implementationPlan);
-            // Create pull request
-            await this.createPullRequest(branchName, implementationPlan);
-            // Mark as completed
-            await this.markIssueCompleted();
+            // Step 7: Run tests to verify implementation
+            await this.runTests();
+            console.log(`🧪 Tests passing`);
+            // Step 8: Commit changes
+            await this.commitChanges(plan.commitMessage);
+            console.log(`💾 Changes committed`);
+            // Step 9: Create pull request
+            const prUrl = await this.createPullRequest(plan, issueSpec);
+            console.log(`🚀 Pull request created: ${prUrl}`);
+            // Step 10: Update task status and release resources
+            await this.completeTask(prUrl);
+            return prUrl;
         }
         catch (error) {
-            this.log('error', 'Development process failed:', error);
-            await this.reportError(error);
+            console.error(`❌ Development failed:`, error);
+            await this.handleError(error);
             throw error;
         }
     }
-    parseIssueSpecification(issue) {
+    async registerWithMCP() {
+        if (!this.mcpClient)
+            return;
+        try {
+            await this.mcpClient.connect();
+            const result = await this.mcpClient.register({
+                id: this.instanceId,
+                type: 'developer',
+                status: 'idle',
+                capabilities: ['development', 'typescript', 'testing', 'github'],
+                metadata: {
+                    version: '1.0.0',
+                    issueNumber: this.config.issueNumber,
+                    startedAt: new Date().toISOString()
+                }
+            });
+            console.log(`📡 Registered with MCP server: ${result.instanceId}`);
+        }
+        catch (error) {
+            console.warn(`⚠️ Failed to register with MCP server:`, error);
+        }
+    }
+    async claimIssue() {
+        if (!this.mcpClient)
+            return;
+        try {
+            const result = await this.mcpClient.claimResource('issue', this.config.issueNumber.toString(), this.instanceId, 'develop');
+            if (result.claimed) {
+                console.log(`🔒 Claimed issue #${this.config.issueNumber}`);
+            }
+            else {
+                throw new Error(`Failed to claim issue #${this.config.issueNumber}. Conflicts with: ${result.conflictsWith?.join(', ')}`);
+            }
+        }
+        catch (error) {
+            console.warn(`⚠️ Failed to claim issue:`, error);
+            throw error;
+        }
+    }
+    async fetchIssue() {
+        const { data: issue } = await this.octokit.issues.get({
+            owner: this.config.githubOwner,
+            repo: this.config.githubRepo,
+            issue_number: this.config.issueNumber
+        });
         return {
             title: issue.title,
-            description: issue.body || '',
-            requirements: this.extractRequirements(issue.body || ''),
-            priority: this.extractPriority(issue),
+            body: issue.body || '',
+            labels: issue.labels.map(label => typeof label === 'string' ? label : label.name || ''),
+            assignee: issue.assignee?.login,
+            milestone: issue.milestone?.title
         };
     }
-    extractRequirements(body) {
-        // Simple requirement extraction - look for bullet points or numbered lists
-        const lines = body.split('\n');
-        const requirements = [];
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (trimmed.startsWith('-') || trimmed.startsWith('*') || /^\d+\./.test(trimmed)) {
-                requirements.push(trimmed.replace(/^[-*]\s*|^\d+\.\s*/, ''));
-            }
-        }
-        return requirements.length > 0 ? requirements : [body];
+    async generateImplementationPlan(issueSpec) {
+        const prompt = `
+You are a senior software engineer. Analyze this GitHub issue and create a detailed implementation plan.
+
+ISSUE:
+Title: ${issueSpec.title}
+Description: ${issueSpec.body}
+Labels: ${issueSpec.labels.join(', ')}
+
+PROJECT CONTEXT:
+- TypeScript project with Jest testing
+- ES modules (import/export)
+- Follows existing code patterns in src/
+- All new functionality needs comprehensive tests
+
+Please provide a JSON implementation plan with:
+1. List of files to create/modify (with descriptions)
+2. Branch name (feature/descriptive-name format)
+3. Commit message (conventional commits format)
+4. PR title and description
+
+Focus on:
+- Clean, maintainable TypeScript code
+- Comprehensive test coverage
+- Following existing project patterns
+- Clear documentation
+
+Return ONLY valid JSON in this format:
+{
+  "files": [
+    {
+      "path": "src/feature/new-feature.ts",
+      "description": "Main implementation",
+      "type": "implementation"
+    },
+    {
+      "path": "test/feature/new-feature.test.ts", 
+      "description": "Unit tests",
+      "type": "test"
     }
-    extractPriority(issue) {
-        const labels = this.githubUtils.parseIssueLabels(issue);
-        // Ensure labels is an array
-        if (!Array.isArray(labels)) {
-            return 'medium';
-        }
-        if (labels.includes('priority:high'))
-            return 'high';
-        if (labels.includes('priority:low'))
-            return 'low';
-        return 'medium';
-    }
-    async analyzeImplementation(spec) {
-        // Simple implementation analysis
-        // In a real system, this would use AI to analyze the specification
-        this.log('info', 'Analyzing implementation requirements...');
-        // Basic completability check
-        const isCompletable = spec.requirements.length > 0 &&
-            spec.title.length > 0 &&
-            !spec.description.toLowerCase().includes('impossible');
-        return {
-            isCompletable,
-            reason: isCompletable ? undefined : 'Insufficient specification or marked as impossible',
-            estimatedComplexity: spec.requirements.length > 3 ? 'high' : 'medium',
-            requiredFiles: this.identifyRequiredFiles(spec),
-            steps: this.generateImplementationSteps(spec),
-        };
-    }
-    identifyRequiredFiles(spec) {
-        // Simple file identification based on keywords
-        const files = [];
-        const description = spec.description.toLowerCase();
-        if (description.includes('agent') || description.includes('class')) {
-            files.push('src/agents/new-agent.ts');
-        }
-        if (description.includes('test')) {
-            files.push('test/new-feature.test.ts');
-        }
-        if (description.includes('util') || description.includes('helper')) {
-            files.push('src/agents/shared/new-utils.ts');
-        }
-        return files;
-    }
-    generateImplementationSteps(_spec) {
-        return [
-            'Analyze existing codebase structure',
-            'Implement core functionality',
-            'Add error handling',
-            'Write unit tests',
-            'Update documentation',
-        ];
-    }
-    async createImplementationBranch() {
-        const branchName = `agent/developer-issue-${this.issueNumber}`;
-        this.log('info', `Creating implementation branch: ${branchName}`);
-        if (this.isContainerEnvironment()) {
-            // In container environment, set up git workspace
-            await this.setupContainerGitWorkspace();
-            await this.createGitBranch(branchName);
-        }
-        return branchName;
-    }
-    isContainerEnvironment() {
-        return process.env.NODE_ENV === 'production' && process.env.AGENT_TYPE === 'developer';
-    }
-    async setupContainerGitWorkspace() {
-        const { spawn } = await import('child_process');
-        // Clone the repository into workspace
-        const options = this.options;
-        const repoUrl = `https://${options.githubToken}@github.com/${options.owner}/${options.repo}.git`;
-        this.log('info', 'Setting up git workspace in container...');
-        await new Promise((resolve, reject) => {
-            const cloneProcess = spawn('git', [
-                'clone',
-                repoUrl,
-                '/workspace/repo'
-            ], {
-                stdio: ['pipe', 'pipe', 'pipe']
-            });
-            cloneProcess.on('close', (code) => {
-                if (code === 0) {
-                    this.log('info', 'Repository cloned successfully');
-                    resolve();
-                }
-                else {
-                    reject(new Error(`Git clone failed with exit code ${code}`));
-                }
-            });
-            cloneProcess.on('error', (error) => {
-                reject(error);
-            });
+  ],
+  "branchName": "feature/descriptive-name",
+  "commitMessage": "feat: add new feature functionality",
+  "prTitle": "Add new feature functionality",
+  "prDescription": "Implements new feature as requested in issue #${this.config.issueNumber}\\n\\n- Feature description\\n- Implementation details\\n\\nCloses #${this.config.issueNumber}"
+}`;
+        const claudePath = this.config.claudePath || 'claude';
+        const result = execSync(`${claudePath} --prompt "${prompt.replace(/"/g, '\\"')}"`, {
+            encoding: 'utf8',
+            cwd: this.config.workingDirectory
         });
-        // Change to the repository directory for subsequent git operations
-        process.chdir('/workspace/repo');
-    }
-    async createGitBranch(branchName) {
-        const { spawn } = await import('child_process');
-        this.log('info', `Creating git branch: ${branchName}`);
-        // Create and checkout new branch
-        await new Promise((resolve, reject) => {
-            const branchProcess = spawn('git', [
-                'checkout',
-                '-b',
-                branchName
-            ], {
-                stdio: ['pipe', 'pipe', 'pipe']
-            });
-            branchProcess.on('close', (code) => {
-                if (code === 0) {
-                    this.log('info', `Branch ${branchName} created and checked out`);
-                    resolve();
-                }
-                else {
-                    reject(new Error(`Git branch creation failed with exit code ${code}`));
-                }
-            });
-            branchProcess.on('error', (error) => {
-                reject(error);
-            });
-        });
-    }
-    async implementFeatures(plan) {
-        this.log('info', 'Implementing features...');
-        for (const step of plan.steps) {
-            this.log('info', `Executing step: ${step}`);
-            // In a real implementation, this would execute the actual implementation
-            await new Promise(resolve => setTimeout(resolve, 100)); // Simulate work
-        }
-    }
-    async createPullRequest(branchName, plan) {
-        const title = `Implement: ${this.issue.title}`;
-        const body = this.generatePullRequestBody(plan);
-        this.log('info', 'Creating pull request with branch...');
         try {
-            const pr = await this.githubUtils.createPullRequestWithBranch(title, branchName, 'main', body);
-            this.log('info', `Pull request created: ${pr.html_url}`);
-            // Add comment to original issue
-            await this.githubUtils.createIssueComment(this.issueNumber, `✅ Implementation completed! Pull request: ${pr.html_url}`);
+            return JSON.parse(result.trim());
         }
         catch (error) {
-            this.log('error', 'Failed to create pull request:', error);
-            throw error;
+            throw new Error(`Failed to parse implementation plan: ${result}`);
         }
     }
-    generatePullRequestBody(plan) {
-        return `
-## Implementation Summary
-
-This PR implements the requirements specified in issue #${this.issueNumber}.
-
-### Changes Made
-${plan.steps.map(step => `- ${step}`).join('\n')}
-
-### Files Modified
-${plan.requiredFiles.map(file => `- ${file}`).join('\n')}
-
-### Complexity
-${plan.estimatedComplexity}
-
----
-🤖 Generated by DeveloperAgent
-    `.trim();
+    async createFeatureBranch(branchName) {
+        // Ensure we're on main and up to date
+        execSync('git checkout main', { cwd: this.config.workingDirectory });
+        execSync('git pull origin main', { cwd: this.config.workingDirectory });
+        // Create and checkout feature branch
+        execSync(`git checkout -b ${branchName}`, { cwd: this.config.workingDirectory });
+        return branchName;
     }
-    async markIssueCompleted() {
-        await this.githubUtils.createIssueComment(this.issueNumber, '✅ Development completed successfully. Ready for review.');
+    async implementFile(file, issueSpec) {
+        const fullPath = join(this.config.workingDirectory, file.path);
+        const dirPath = dirname(fullPath);
+        // Create directory if it doesn't exist
+        execSync(`mkdir -p "${dirPath}"`, { cwd: this.config.workingDirectory });
+        // Read existing file if it exists
+        const existingContent = existsSync(fullPath) ? readFileSync(fullPath, 'utf8') : '';
+        // Read related files for context
+        const context = await this.gatherFileContext();
+        const prompt = `
+You are implementing a file for a TypeScript project. 
+
+TASK: ${file.description}
+FILE: ${file.path}
+TYPE: ${file.type}
+
+ISSUE CONTEXT:
+Title: ${issueSpec.title}
+Description: ${issueSpec.body}
+
+EXISTING FILE CONTENT:
+${existingContent || '(new file)'}
+
+PROJECT CONTEXT:
+${context}
+
+REQUIREMENTS:
+1. Use TypeScript with strict typing
+2. Follow ES module syntax (import/export)
+3. For implementation files: write clean, maintainable code
+4. For test files: use Jest with @jest/globals imports
+5. Follow existing code patterns shown in context
+6. Add comprehensive JSDoc comments
+7. Handle edge cases and errors appropriately
+
+${file.type === 'test' ? `
+TEST REQUIREMENTS:
+- Import from '@jest/globals'
+- Use describe/it blocks
+- Test happy path and edge cases
+- Mock external dependencies if needed
+- Aim for high coverage
+` : ''}
+
+${file.type === 'implementation' ? `
+IMPLEMENTATION REQUIREMENTS:
+- Export functions/classes that fulfill the issue requirements
+- Use existing utilities and patterns where possible
+- Add proper error handling
+- Follow the project's coding conventions
+` : ''}
+
+Generate the complete file content. Do not include markdown code blocks or explanations - return only the file content.`;
+        const claudePath = this.config.claudePath || 'claude';
+        const result = execSync(`${claudePath} --prompt "${prompt.replace(/"/g, '\\"')}"`, {
+            encoding: 'utf8',
+            cwd: this.config.workingDirectory
+        });
+        // Write the generated content
+        writeFileSync(fullPath, result.trim(), 'utf8');
     }
-    async reportUncompletableSpec(reason) {
-        await this.githubUtils.createIssueComment(this.issueNumber, `❌ Unable to complete this specification.\n\nReason: ${reason}\n\nPlease provide more details or clarify the requirements.`);
+    async gatherFileContext() {
+        const contexts = [];
+        // Get package.json for dependencies
+        try {
+            const packagePath = join(this.config.workingDirectory, 'package.json');
+            if (existsSync(packagePath)) {
+                const packageJson = readFileSync(packagePath, 'utf8');
+                contexts.push(`PACKAGE.JSON:\n${packageJson}`);
+            }
+        }
+        catch (error) {
+            // Ignore
+        }
+        // Get related files from src directory
+        try {
+            const srcDir = join(this.config.workingDirectory, 'src');
+            if (existsSync(srcDir)) {
+                const files = execSync(`find "${srcDir}" -name "*.ts" -type f | head -3`, {
+                    encoding: 'utf8',
+                    cwd: this.config.workingDirectory
+                }).split('\n').filter(Boolean);
+                for (const file of files) {
+                    const fullPath = join(this.config.workingDirectory, file);
+                    if (existsSync(fullPath)) {
+                        const content = readFileSync(fullPath, 'utf8');
+                        contexts.push(`EXAMPLE FILE (${file}):\n${content.substring(0, 1000)}`);
+                    }
+                }
+            }
+        }
+        catch (error) {
+            // Ignore
+        }
+        return contexts.join('\n\n');
     }
-    async reportError(error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        await this.githubUtils.createIssueComment(this.issueNumber, `❌ Development failed with error:\n\n\`\`\`\n${errorMessage}\n\`\`\`\n\nPlease check the specification and try again.`);
+    async runTests() {
+        try {
+            execSync('npm test', {
+                cwd: this.config.workingDirectory,
+                stdio: 'pipe'
+            });
+        }
+        catch (error) {
+            throw new Error(`Tests failed: ${error}`);
+        }
     }
+    async commitChanges(commitMessage) {
+        // Stage all changes
+        execSync('git add .', { cwd: this.config.workingDirectory });
+        // Check if there are changes to commit
+        try {
+            execSync('git diff --staged --quiet', { cwd: this.config.workingDirectory });
+            throw new Error('No changes to commit');
+        }
+        catch (error) {
+            // If the error is our manually thrown one, re-throw it
+            if (error instanceof Error && error.message === 'No changes to commit') {
+                throw error;
+            }
+            // Otherwise, it means git diff failed because there are changes - which is what we want
+        }
+        // Commit changes
+        execSync(`git commit -m "${commitMessage}"`, { cwd: this.config.workingDirectory });
+    }
+    async createPullRequest(plan, _issueSpec) {
+        // Push branch to remote
+        execSync(`git push origin ${plan.branchName}`, { cwd: this.config.workingDirectory });
+        // Create pull request
+        const { data: pr } = await this.octokit.pulls.create({
+            owner: this.config.githubOwner,
+            repo: this.config.githubRepo,
+            title: plan.prTitle,
+            body: plan.prDescription,
+            head: plan.branchName,
+            base: 'main'
+        });
+        return pr.html_url;
+    }
+    async completeTask(prUrl) {
+        if (!this.mcpClient)
+            return;
+        try {
+            // Update task status if we have one
+            if (this.currentTaskId) {
+                await this.mcpClient.updateTaskStatus(this.currentTaskId, 'completed', {
+                    pullRequestUrl: prUrl,
+                    completedAt: new Date().toISOString()
+                });
+            }
+            // Release the issue resource
+            await this.mcpClient.releaseResource('issue', this.config.issueNumber.toString(), this.instanceId);
+            // Update status to idle
+            await this.mcpClient.heartbeat(this.instanceId, 'idle', {
+                lastTask: this.currentTaskId,
+                completedAt: new Date().toISOString()
+            });
+            console.log(`✅ Task completed and resources released: ${prUrl}`);
+        }
+        catch (error) {
+            console.warn(`⚠️ Failed to complete task cleanup:`, error);
+        }
+        finally {
+            // Always disconnect
+            await this.mcpClient.disconnect();
+        }
+    }
+    async handleError(error) {
+        if (!this.mcpClient)
+            return;
+        try {
+            // Update task status as failed if we have one
+            if (this.currentTaskId) {
+                await this.mcpClient.updateTaskStatus(this.currentTaskId, 'failed', {
+                    error: error instanceof Error ? error.message : String(error),
+                    failedAt: new Date().toISOString()
+                });
+            }
+            // Release the issue resource
+            await this.mcpClient.releaseResource('issue', this.config.issueNumber.toString(), this.instanceId);
+            // Update status to offline
+            await this.mcpClient.heartbeat(this.instanceId, 'offline', {
+                error: error instanceof Error ? error.message : String(error),
+                failedAt: new Date().toISOString()
+            });
+            console.log(`❌ Task failed, resources released`);
+        }
+        catch (mcpError) {
+            console.warn(`⚠️ Failed to handle error cleanup:`, mcpError);
+        }
+        finally {
+            // Always disconnect
+            await this.mcpClient.disconnect();
+        }
+    }
+}
+// CLI entry point
+if (require.main === module) {
+    const issueNumber = parseInt(process.argv[2]);
+    if (!issueNumber) {
+        console.error('Usage: developer-agent.ts <issue-number>');
+        process.exit(1);
+    }
+    const config = {
+        issueNumber,
+        githubToken: process.env.GITHUB_TOKEN || '',
+        githubOwner: process.env.GITHUB_OWNER || '',
+        githubRepo: process.env.GITHUB_REPO || '',
+        workingDirectory: process.cwd(),
+        claudePath: process.env.CLAUDE_PATH || 'claude',
+        mcpServerCommand: process.env.MCP_SERVER_COMMAND || 'npm',
+        mcpServerArgs: process.env.MCP_SERVER_ARGS?.split(' ') || ['run', 'mcp-server']
+    };
+    const agent = new DeveloperAgent(config);
+    agent.develop()
+        .then(prUrl => {
+        console.log(`🎉 Development completed successfully!`);
+        console.log(`Pull Request: ${prUrl}`);
+        process.exit(0);
+    })
+        .catch(error => {
+        console.error('Development failed:', error.message);
+        process.exit(1);
+    });
 }

@@ -181,11 +181,17 @@ run_agent() {
         exit 1
     fi
     
-    # Check if agent script exists
+    # Check if agent script exists (try multiple locations)
     agent_script="$SCRIPTS_DIR/$agent_name.sh"
-    if [ ! -f "$agent_script" ]; then
+    agent_script_alt="$SCRIPTS_DIR/agents/$agent_name.sh"
+    
+    if [ -f "$agent_script" ]; then
+        agent_script="$agent_script"
+    elif [ -f "$agent_script_alt" ]; then
+        agent_script="$agent_script_alt"
+    else
         echo -e "${RED}Error: Script for agent '$agent_name' not found${NC}"
-        echo "Expected: $agent_script"
+        echo "Expected: $agent_script or $agent_script_alt"
         echo "Please create the script or refer to the agent documentation"
         exit 1
     fi

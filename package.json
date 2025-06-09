@@ -12,6 +12,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:mcp": "jest test/mcp-server test/mcp-client",
+    "test:agents": "jest test/agents",
     "test:integration": "jest test/mcp-server --testNamePattern=integration",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"

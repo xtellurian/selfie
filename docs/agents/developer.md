@@ -1,71 +1,81 @@
 # Developer Agent
-## Transforms specifications into working code via pull requests
+## Autonomous code implementation from GitHub issues using Claude CLI
 
 ### Purpose
-The Developer Agent takes development specifications from GitHub issues and implements them by creating working code, tests, and documentation. It operates autonomously to create pull requests that fulfill the specified requirements. Can be spawned by Initializer Agents via MCP calls or run independently.
+The Developer Agent is an autonomous software development agent that takes GitHub issue specifications and implements them by writing code, tests, and creating pull requests using Claude CLI. It operates autonomously to transform issue requirements into working software through intelligent code generation.
+
+### Key Features
+- **Claude CLI Integration**: Uses Claude CLI for intelligent code generation
+- **MCP Coordination**: Integrates with MCP server for multi-agent coordination
+- **Autonomous Implementation**: Complete end-to-end development workflow
+- **Quality Assurance**: Runs tests and validates implementation
+- **GitHub Integration**: Creates PRs linked to original issues
 
 ### Input Source
-- Spawned by Initializer Agent via MCP calls with specific issue numbers
-- GitHub issue containing development specifications
-- Can be manually triggered for specific issues
+- GitHub issues with development specifications
+- Can be spawned by Initializer Agent via MCP calls
+- Manual execution for specific issues
 - MCP coordination messages from other Selfie instances
 
 ### Responsibilities
-- Analyze development specifications from GitHub issues
-- Plan implementation approach and architecture
-- Write code to meet specifications
-- Create or update tests for the implementation
-- Update documentation as needed
-- Create comprehensive pull requests
-- Report progress and status back to coordinating Selfie instances via MCP
-- Handle cases where specs are not completable (report back to issue and MCP coordinator)
-- Coordinate with other developer instances to prevent conflicts
+- Fetch and analyze GitHub issue specifications
+- Generate implementation plans using Claude CLI
+- Write TypeScript code following project conventions
+- Create comprehensive test suites with Jest
+- Run tests to verify implementation
+- Create pull requests with detailed descriptions
+- Coordinate with MCP server to prevent conflicts
+- Handle errors and provide meaningful feedback
 
 ### Usage
 ```bash
-./start.sh developer --issue <issue_number> [options]
+./start.sh developer <issue_number> [options]
 ```
 
 ### Options
-- `--issue <number>` - GitHub issue number to implement (required)
-- `--branch <name>` - Custom branch name (default: auto-generated)
-- `--base <branch>` - Base branch for PR (default: main)
-- `--dry-run` - Analyze and plan without making changes
-- `--verbose` - Enable verbose logging
-- `--mcp-server <url>` - MCP server URL for coordination (default: http://localhost:3000)
-- `--coordinator-id <id>` - ID of the coordinating Selfie instance (for MCP spawned agents)
+- `<issue_number>` - GitHub issue number to implement (required)
+- `--help, -h` - Show help message
+- `--dry-run` - Show implementation plan without executing
+- `--claude-path PATH` - Path to Claude CLI executable
+- `--mcp-server` - Use MCP server for coordination
+- `--no-mcp` - Skip MCP server integration
 
 ### Environment Variables
-Environment variables can be set in a `.env` file in the project root or as system environment variables:
+Environment variables can be set in a `.env` file in the project root:
 
-- `GITHUB_TOKEN` - GitHub personal access token (required)
-- `GITHUB_OWNER` - Repository owner (required)
-- `GITHUB_REPO` - Repository name (required)
-- `MCP_SERVER_URL` - MCP server URL for coordination (optional, default: http://localhost:3000)
-- `SELFIE_INSTANCE_ID` - Unique identifier for this Selfie instance (optional, auto-generated)
+**Required:**
+- `GITHUB_TOKEN` - GitHub personal access token with repo permissions
+- `GITHUB_OWNER` - Repository owner/organization name
+- `GITHUB_REPO` - Repository name
+
+**Optional:**
+- `CLAUDE_PATH` - Path to Claude CLI executable (default: `claude`)
+- `MCP_SERVER_COMMAND` - Command to start MCP server (default: `npm`)
+- `MCP_SERVER_ARGS` - Arguments for MCP server (default: `run mcp-server`)
 
 Example `.env` file:
 ```bash
-GITHUB_TOKEN=github_pat_your_token_here
+GITHUB_TOKEN=ghp_your_token_here
 GITHUB_OWNER=your-username
 GITHUB_REPO=your-repository
-MCP_SERVER_URL=http://localhost:3000
-SELFIE_INSTANCE_ID=developer-worker-1
+CLAUDE_PATH=/usr/local/bin/claude
+MCP_SERVER_COMMAND=npm
+MCP_SERVER_ARGS=run mcp-server
 ```
 
 ### Examples
 ```bash
 # Implement a specific issue
-./start.sh developer --issue 123
+./start.sh developer 123
 
-# Use a custom branch name
-./start.sh developer --issue 123 --branch feature/my-implementation
+# Show implementation plan without executing
+./start.sh developer 123 --dry-run
 
-# Target a different base branch
-./start.sh developer --issue 123 --base develop
+# Use custom Claude CLI path
+./start.sh developer 123 --claude-path /path/to/claude
 
-# Dry run to see the implementation plan
-./start.sh developer --issue 123 --dry-run
+# Work without MCP coordination
+./start.sh developer 123 --no-mcp
 ```
 
 ### Implementation Process

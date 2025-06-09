@@ -3,14 +3,23 @@
 #
 # Developer Agent Script
 # 
-# Shell wrapper for the TypeScript developer agent
+# Executes the developer agent to implement GitHub issues
 #
 
 set -euo pipefail
 
-# Get script directory  
+# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Source shared functions
+source "$SCRIPT_DIR/../shared-functions.sh"
+
+# Load environment variables
+load_dotenv
+
+# Validate environment
+validate_environment
 
 # Colors for output
 RED='\033[0;31m'
@@ -21,12 +30,9 @@ NC='\033[0m' # No Color
 
 # Print usage
 print_usage() {
-    echo "Developer Agent - Implements features from GitHub issues"
-    echo ""
     echo "Usage: $0 <issue-number> [options]"
     echo ""
     echo "Options:"
-    echo "  <issue-number>          GitHub issue number to implement (required)"
     echo "  --help, -h              Show this help message"
     echo "  --dry-run              Show what would be done without executing"
     echo "  --claude-path PATH     Path to Claude CLI (default: claude)"
@@ -47,31 +53,11 @@ print_usage() {
     echo "  $0 789 --no-mcp        # Work without MCP coordination"
 }
 
-# Function to load environment variables from .env file
-load_dotenv() {
-    if [ -f "$PROJECT_ROOT/.env" ]; then
-        echo -e "${BLUE}Loading environment variables from .env${NC}"
-        
-        # Read .env file and export variables
-        while IFS= read -r line || [ -n "$line" ]; do
-            # Skip empty lines and comments
-            if [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]]; then
-                continue
-            fi
-            
-            # Export the variable
-            if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-                export "${BASH_REMATCH[1]}"="${BASH_REMATCH[2]}"
-            fi
-        done < "$PROJECT_ROOT/.env"
-    else
-        echo -e "${YELLOW}No .env file found - using system environment variables${NC}"
-    fi
-}
-
 # Parse command line arguments
 ISSUE_NUMBER=""
-AGENT_ARGS=()
+DRY_RUN=false
+CLAUDE_PATH="${CLAUDE_PATH:-claude}"
+USE_MCP=true
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -79,13 +65,21 @@ while [[ $# -gt 0 ]]; do
             print_usage
             exit 0
             ;;
-        --dry-run|--claude-path|--mcp-server|--no-mcp)
-            AGENT_ARGS+=("$1")
+        --dry-run)
+            DRY_RUN=true
             shift
             ;;
         --claude-path)
-            AGENT_ARGS+=("$1" "$2")
+            CLAUDE_PATH="$2"
             shift 2
+            ;;
+        --mcp-server)
+            USE_MCP=true
+            shift
+            ;;
+        --no-mcp)
+            USE_MCP=false
+            shift
             ;;
         -*|--*)
             echo -e "${RED}Unknown option $1${NC}" >&2
@@ -117,9 +111,6 @@ if ! [[ "$ISSUE_NUMBER" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-# Load environment variables
-load_dotenv
-
 # Validate required environment variables
 REQUIRED_VARS=("GITHUB_TOKEN" "GITHUB_OWNER" "GITHUB_REPO")
 for var in "${REQUIRED_VARS[@]}"; do
@@ -130,25 +121,52 @@ for var in "${REQUIRED_VARS[@]}"; do
     fi
 done
 
+# Check if Claude CLI is available
+if ! command -v "$CLAUDE_PATH" &> /dev/null; then
+    echo -e "${RED}Error: Claude CLI not found at '$CLAUDE_PATH'${NC}" >&2
+    echo "Please install Claude CLI or specify correct path with --claude-path" >&2
+    exit 1
+fi
+
 # Build the project first
 echo -e "${BLUE}Building project...${NC}"
 cd "$PROJECT_ROOT"
 npm run build
+
+# Prepare environment variables for the agent
+export CLAUDE_PATH="$CLAUDE_PATH"
+
+if [[ "$USE_MCP" == "true" ]]; then
+    export MCP_SERVER_COMMAND="${MCP_SERVER_COMMAND:-npm}"
+    export MCP_SERVER_ARGS="${MCP_SERVER_ARGS:-run mcp-server}"
+else
+    unset MCP_SERVER_COMMAND
+    unset MCP_SERVER_ARGS
+fi
 
 # Show configuration
 echo -e "${BLUE}Developer Agent Configuration:${NC}"
 echo "  Issue Number: $ISSUE_NUMBER"
 echo "  GitHub Owner: $GITHUB_OWNER"
 echo "  GitHub Repo: $GITHUB_REPO"
+echo "  Claude Path: $CLAUDE_PATH"
 echo "  Working Directory: $PROJECT_ROOT"
+echo "  MCP Integration: $([ "$USE_MCP" == "true" ] && echo "enabled" || echo "disabled")"
 
-# Execute the TypeScript developer agent
+if [[ "$DRY_RUN" == "true" ]]; then
+    echo ""
+    echo -e "${YELLOW}DRY RUN: Would execute developer agent with above configuration${NC}"
+    echo "Command: node dist/agents/developer/developer-agent.js $ISSUE_NUMBER"
+    exit 0
+fi
+
+# Execute the developer agent
 echo ""
 echo -e "${GREEN}🤖 Starting developer agent for issue #$ISSUE_NUMBER...${NC}"
 echo ""
 
 # Run the developer agent
-if node "dist/agents/developer/developer-agent.js" "$ISSUE_NUMBER" "${AGENT_ARGS[@]}"; then
+if node "dist/agents/developer/developer-agent.js" "$ISSUE_NUMBER"; then
     echo ""
     echo -e "${GREEN}✅ Developer agent completed successfully!${NC}"
     exit 0
