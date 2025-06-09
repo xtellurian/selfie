@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { helloWorld, getVersion, getSystemInfo } from '../src/index.js';
+import { helloWorld, getVersion, getSystemInfo, multiply } from '../src/index.js';
 
 describe('Selfie Library', () => {
   describe('helloWorld', () => {
@@ -31,6 +31,33 @@ describe('Selfie Library', () => {
       expect(result).toHaveProperty('name');
       expect(result).toHaveProperty('version');
       expect(result).toHaveProperty('description');
+    });
+  });
+
+  describe('multiply', () => {
+    it('should multiply two positive numbers correctly', () => {
+      const result = multiply(3, 4);
+      expect(result).toBe(12);
+    });
+
+    it('should multiply two negative numbers correctly', () => {
+      const result = multiply(-2, -5);
+      expect(result).toBe(10);
+    });
+
+    it('should multiply positive and negative numbers correctly', () => {
+      const result = multiply(6, -3);
+      expect(result).toBe(-18);
+    });
+
+    it('should handle multiplication by zero', () => {
+      expect(multiply(5, 0)).toBe(0);
+      expect(multiply(0, 10)).toBe(0);
+    });
+
+    it('should handle decimal numbers', () => {
+      const result = multiply(2.5, 4);
+      expect(result).toBe(10);
     });
   });
 });
