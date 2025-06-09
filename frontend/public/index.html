@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selfie Frontend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .nav-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .nav-button:hover {
+            background: #0056b3;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .features {
+            margin-top: 20px;
+        }
+        .features h3 {
+            color: #666;
+        }
+        .features ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+        .features li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <alice-page></alice-page>
+        <bob-page></bob-page>
+    </div>
+
+    <script>
+        // Alice Page Component
+        class AlicePage extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+                this.render();
+            }
+
+            render() {
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        :host {
+                            display: block;
+                        }
+                        :host(.hidden) {
+                            display: none;
+                        }
+                        .page {
+                            font-family: Arial, sans-serif;
+                        }
+                        .nav-button {
+                            background: #007bff;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            margin: 10px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 16px;
+                        }
+                        .nav-button:hover {
+                            background: #0056b3;
+                        }
+                        h1 {
+                            color: #333;
+                            border-bottom: 2px solid #007bff;
+                            padding-bottom: 10px;
+                        }
+                        .features {
+                            margin-top: 20px;
+                        }
+                        .features h3 {
+                            color: #666;
+                        }
+                        .features ul {
+                            list-style-type: disc;
+                            padding-left: 20px;
+                        }
+                        .features li {
+                            margin: 8px 0;
+                        }
+                    </style>
+                    <div class="page" data-testid="alice-page">
+                        <h1>Alice's Page</h1>
+                        <p>Welcome to Alice's page! This is where Alice can interact with Selfie instances.</p>
+                        <button class="nav-button" data-testid="go-to-bob-button" id="goToBobBtn">
+                            Go to Bob's Page
+                        </button>
+                        <div class="features">
+                            <h3>Alice's Features</h3>
+                            <ul>
+                                <li>Monitor Selfie agent status</li>
+                                <li>Create new development tasks</li>
+                                <li>View active MCP connections</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                this.shadowRoot.getElementById('goToBobBtn').addEventListener('click', () => {
+                    this.classList.add('hidden');
+                    document.querySelector('bob-page').classList.remove('hidden');
+                });
+            }
+        }
+
+        // Bob Page Component
+        class BobPage extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+                this.classList.add('hidden');
+                this.render();
+            }
+
+            render() {
+                this.shadowRoot.innerHTML = `
+                    <style>
+                        :host {
+                            display: block;
+                        }
+                        :host(.hidden) {
+                            display: none;
+                        }
+                        .page {
+                            font-family: Arial, sans-serif;
+                        }
+                        .nav-button {
+                            background: #007bff;
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            margin: 10px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 16px;
+                        }
+                        .nav-button:hover {
+                            background: #0056b3;
+                        }
+                        h1 {
+                            color: #333;
+                            border-bottom: 2px solid #007bff;
+                            padding-bottom: 10px;
+                        }
+                        .features {
+                            margin-top: 20px;
+                        }
+                        .features h3 {
+                            color: #666;
+                        }
+                        .features ul {
+                            list-style-type: disc;
+                            padding-left: 20px;
+                        }
+                        .features li {
+                            margin: 8px 0;
+                        }
+                    </style>
+                    <div class="page" data-testid="bob-page">
+                        <h1>Bob's Page</h1>
+                        <p>Welcome to Bob's page! This is where Bob can manage Selfie coordination.</p>
+                        <button class="nav-button" data-testid="go-to-alice-button" id="goToAliceBtn">
+                            Go to Alice's Page
+                        </button>
+                        <div class="features">
+                            <h3>Bob's Features</h3>
+                            <ul>
+                                <li>Coordinate multiple Selfie instances</li>
+                                <li>Review pull requests and code changes</li>
+                                <li>Manage development task queues</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+
+                this.shadowRoot.getElementById('goToAliceBtn').addEventListener('click', () => {
+                    this.classList.add('hidden');
+                    document.querySelector('alice-page').classList.remove('hidden');
+                });
+            }
+        }
+
+        // Register custom elements
+        customElements.define('alice-page', AlicePage);
+        customElements.define('bob-page', BobPage);
+    </script>
+</body>
+</html>

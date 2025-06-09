@@ -4,6 +4,11 @@
       "command": "npm",
       "args": ["run", "mcp-server"],
       "env": {}
+    },
+    "playwright-mcp-server": {
+      "command": "npx",
+      "args": ["playwright-mcp-server"],
+      "env": {}
     }
   }
 }

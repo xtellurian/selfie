@@ -48,6 +48,13 @@ The system consists of three main components:
 - **MCP Client**: Client functions for interacting with MCP servers
 - **Shared Types**: TypeScript types shared between components
 
+#### 4. Frontend Interface (`frontend/`)
+- **Purpose**: Web-based interface for interacting with Selfie instances
+- **Technology**: Plain web components using Hybrids library (https://github.com/hybridsjs/hybrids)
+- **Testing**: Playwright for end-to-end testing with screenshot capabilities
+- **Architecture**: Component-based UI with page routing
+- **Integration**: Direct interaction with Selfie MCP server for real-time coordination
+
 ### Agent Types
 
 #### 1. Initializer Agent

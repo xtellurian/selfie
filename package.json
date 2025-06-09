@@ -10,6 +10,10 @@
     "dev": "npm run build && node -e \"console.log(require('./dist/index.js').helloWorld())\"",
     "mcp-server": "npm run build && node dist/mcp-server/index.js",
     "mcp-server:dev": "npm run build && node --inspect dist/mcp-server/index.js",
+    "frontend:dev": "cd frontend/public && python3 -m http.server 3000",
+    "frontend:test": "playwright test",
+    "frontend:test:headed": "playwright test --headed",
+    "frontend:test:ui": "playwright test --ui",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:mcp": "jest test/mcp-server test/mcp-client",
@@ -29,8 +33,12 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@octokit/rest": "^20.0.2",
+    "@playwright/test": "^1.52.0",
     "axios": "^1.6.2",
     "dotenv": "^16.3.1",
+    "hybrids": "^9.1.17",
+    "playwright": "^1.52.0",
+    "playwright-mcp-server": "^1.0.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
@@ -58,6 +66,8 @@
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },
-    "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"]
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/setup.ts"
+    ]
   }
 }
