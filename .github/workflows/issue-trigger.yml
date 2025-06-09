@@ -7,10 +7,17 @@ on:
 jobs:
   trigger-initializer:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -30,7 +37,18 @@ jobs:
         echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
         echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
         
-    - name: Start initializer with issue ID
-      run: ./start.sh initializer --issue ${{ github.event.issue.number }}
+    - name: Start initializer with Claude Code
+      uses: anthropics/claude-code-action@beta
+      with:
+        anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+        direct_prompt: |
+          A new GitHub issue #${{ github.event.issue.number }} has been created in the repository.
+          
+          Please use the Selfie initializer agent to process this issue:
+          1. Use the Bash tool to run: ./start.sh initializer --issue ${{ github.event.issue.number }}
+          2. Monitor the agent's execution and provide feedback
+          3. If the agent encounters any issues, help troubleshoot and resolve them
+          
+          The initializer will spawn a developer agent via MCP coordination to work on the issue.
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
