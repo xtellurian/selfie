@@ -262,7 +262,7 @@ Return ONLY valid JSON in this format:
 }`;
 
     const claudePath = this.config.claudePath || 'claude';
-    const result = execSync(`${claudePath} --prompt "${prompt.replace(/"/g, '\\"')}"`, {
+    const result = execSync(`${claudePath} "${prompt.replace(/"/g, '\\"')}"`, {
       encoding: 'utf8',
       cwd: this.config.workingDirectory
     });
@@ -347,7 +347,7 @@ IMPLEMENTATION REQUIREMENTS:
 Generate the complete file content. Do not include markdown code blocks or explanations - return only the file content.`;
 
     const claudePath = this.config.claudePath || 'claude';
-    const result = execSync(`${claudePath} --prompt "${prompt.replace(/"/g, '\\"')}"`, {
+    const result = execSync(`${claudePath} "${prompt.replace(/"/g, '\\"')}"`, {
       encoding: 'utf8',
       cwd: this.config.workingDirectory
     });
