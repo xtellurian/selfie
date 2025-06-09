@@ -19,9 +19,18 @@ export function getSystemInfo(): { name: string; version: string; description: s
   };
 }
 
+/**
+ * Logs a hello message to the console with the provided name
+ * @param name - The name to include in the hello message
+ */
+export function hello(name: string): void {
+  console.log(`hello ${name}`);
+}
+
 // Default export for convenience
 export default {
   helloWorld,
   getVersion,
-  getSystemInfo
+  getSystemInfo,
+  hello
 };
