@@ -24,6 +24,7 @@ MCP_SERVER_URL="http://localhost:3000"
 MAX_INSTANCES=3
 SELFIE_INSTANCE_ID="initializer-$(date +%s)"
 STATE_FILE="$PROJECT_ROOT/.initializer-state.json"
+SPECIFIC_ISSUE=""
 
 # Colors for output
 RED='\033[0;31m'
@@ -45,6 +46,7 @@ show_help() {
     echo "  --filter <label>            Only process issues with specific labels"
     echo "  --mcp-server <url>          MCP server URL (default: http://localhost:3000)"
     echo "  --max-instances <number>    Maximum developer instances (default: 3)"
+    echo "  --issue <number>            Process a specific issue number (skip monitoring)"
     echo "  --help                      Show this help message"
     echo ""
     echo "Environment Variables:"
@@ -59,6 +61,7 @@ show_help() {
     echo "  $0 --poll-interval 10      # Check every 10 seconds"
     echo "  $0 --dry-run --verbose     # Test mode with detailed logging"
     echo "  $0 --filter priority:high  # Only process high priority issues"
+    echo "  $0 --issue 123             # Process specific issue #123"
 }
 
 # Function to initialize state tracking
@@ -236,6 +239,59 @@ spawn_local_developer() {
         '.active_agents[$issue] = {pid: ($pid | tonumber), started: now}')
     update_state "$updated_state"
     
+    return 0
+}
+
+# Function to process a specific issue
+process_specific_issue() {
+    local issue_number="$1"
+    
+    log "INFO" "Processing specific issue #$issue_number"
+    
+    local api_url="https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/issues/$issue_number"
+    
+    # Fetch issue details from GitHub API
+    local response
+    if ! response=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+                          -H "Accept: application/vnd.github.v3+json" \
+                          "$api_url"); then
+        log "ERROR" "Failed to fetch issue #$issue_number from GitHub API"
+        return 1
+    fi
+    
+    # Check if response is valid JSON
+    if ! echo "$response" | jq empty 2>/dev/null; then
+        log "ERROR" "Invalid JSON response from GitHub API"
+        log "DEBUG" "Response: $response"
+        return 1
+    fi
+    
+    # Check if issue exists and is open
+    local state=$(echo "$response" | jq -r '.state')
+    if [ "$state" = "null" ] || [ "$state" != "open" ]; then
+        log "ERROR" "Issue #$issue_number is not open or does not exist"
+        return 1
+    fi
+    
+    local issue_title=$(echo "$response" | jq -r '.title')
+    local issue_labels=$(echo "$response" | jq -r '.labels[].name' | tr '\n' ',' | sed 's/,$//')
+    
+    log "INFO" "Processing issue #$issue_number: $issue_title"
+    log "DEBUG" "Labels: $issue_labels"
+    
+    # Try MCP coordination first, fall back to local spawning
+    if ! request_developer_via_mcp "$issue_number"; then
+        log "WARN" "MCP coordination failed, falling back to local agent spawning"
+        spawn_local_developer "$issue_number"
+    fi
+    
+    # Mark issue as processed in state
+    local current_state=$(read_state)
+    local updated_state=$(echo "$current_state" | jq --arg issue "$issue_number" \
+        '.processed_issues += [$issue] | .last_poll = now')
+    update_state "$updated_state"
+    
+    log "INFO" "Successfully processed issue #$issue_number"
     return 0
 }
 
@@ -431,6 +487,14 @@ while [[ $# -gt 0 ]]; do
             fi
             shift 2
             ;;
+        --issue)
+            SPECIFIC_ISSUE="$2"
+            if ! [[ "$SPECIFIC_ISSUE" =~ ^[0-9]+$ ]] || [ "$SPECIFIC_ISSUE" -lt 1 ]; then
+                echo -e "${RED}Error: Issue number must be a positive integer${NC}" >&2
+                exit 1
+            fi
+            shift 2
+            ;;
         --help)
             show_help
             exit 0
@@ -479,8 +543,25 @@ main() {
     # Setup signal handlers for graceful shutdown
     setup_signal_handlers "Initializer Agent"
     
-    # Start monitoring
-    monitor_issues
+    # Check if we should process a specific issue or start monitoring
+    if [ ! -z "$SPECIFIC_ISSUE" ]; then
+        log "INFO" "Processing specific issue #$SPECIFIC_ISSUE"
+        
+        # Register with MCP server if available
+        if register_with_mcp; then
+            log "INFO" "MCP coordination enabled for issue processing"
+        else
+            log "WARN" "MCP coordination disabled, using local agents only"
+        fi
+        
+        # Process the specific issue
+        process_specific_issue "$SPECIFIC_ISSUE"
+        
+        log "INFO" "Issue processing completed"
+    else
+        # Start monitoring
+        monitor_issues
+    fi
 }
 
 # Run main function
