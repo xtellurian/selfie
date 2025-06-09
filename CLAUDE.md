@@ -416,11 +416,61 @@ npm run test:integration
 5. Run `./start.sh help` to understand available commands
 
 ### For Claude Code Sessions
-1. Start with: `./start.sh list` to see available agents
-2. Check: agent documentation before modifying any scripts
-3. Use: `--dry-run` flags to test changes safely
-4. Always consider: How does this change support the self-building philosophy?
-5. Follow: documentation-driven development - update docs first, then implementation
+1. **Setup MCP Integration**: The project includes `.mcp.json` in the root for automatic MCP server configuration when you open the project
+2. Start with: `./start.sh list` to see available agents
+3. Check: agent documentation before modifying any scripts
+4. Use: `--dry-run` flags to test changes safely
+5. Always consider: How does this change support the self-building philosophy?
+6. Follow: documentation-driven development - update docs first, then implementation
+
+## Claude Code MCP Integration
+
+### Automatic Configuration
+This project includes a `.mcp.json` file that automatically configures the Selfie MCP server for Claude Code:
+
+```json
+{
+  "mcpServers": {
+    "selfie-mcp-server": {
+      "command": "npm",
+      "args": ["run", "mcp-server"],
+      "env": {}
+    }
+  }
+}
+```
+
+### Using Selfie Tools in Claude Code
+Once the MCP server is configured, you'll have access to 12 coordination tools:
+
+**Instance Management:**
+- `selfie_register` - Register new Selfie instances
+- `selfie_list_instances` - List all registered instances
+- `selfie_unregister` - Remove instances
+
+**Task Coordination:**
+- `selfie_assign_task` - Assign development tasks
+- `selfie_request_developer` - Auto-assign developers to issues
+- `selfie_update_task_status` - Update task progress
+- `selfie_get_task` / `selfie_list_tasks` - Retrieve task information
+
+**Resource Management:**
+- `selfie_claim_resource` - Claim exclusive access to files/branches
+- `selfie_release_resource` - Release claimed resources
+
+**System Information:**
+- `selfie_get_stats` - Server statistics
+- `selfie_get_state` - Detailed server state
+
+### Example Claude Code Workflow
+```markdown
+1. Use `selfie_list_instances` to see available developer agents
+2. Use `selfie_request_developer` to assign work to GitHub issues
+3. Use `selfie_get_stats` to monitor system health
+4. Use resource tools to coordinate file access between agents
+```
+
+This enables seamless coordination between Claude Code sessions and autonomous Selfie agents.
 
 ## Project Status
 

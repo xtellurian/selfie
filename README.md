@@ -2,6 +2,8 @@
 
 An agentic build system that builds itself through autonomous agents coordinated via Model Context Protocol (MCP).
 
+> **🚀 Claude Code Integration**: This project includes `.mcp.json` for seamless integration with Claude Code. Simply open this project in Claude Code to access 12 coordination tools for multi-agent development!
+
 ## Quick Start
 
 ### 1. Install Dependencies
@@ -21,19 +23,30 @@ The MCP server will start on stdio and be ready to accept connections from Claud
 
 ### 3. Add to Claude Code
 
-Configure the Selfie MCP server in Claude Code:
+Configure the Selfie MCP server in Claude Code using one of these methods:
 
-#### Method 1: Using Claude Code CLI
+#### Method 1: Using Project Configuration (Recommended)
+The project includes a `.mcp.json` file for automatic setup:
+
+1. **Simply open this project in Claude Code** - the `.mcp.json` file in the project root will be automatically detected and the Selfie MCP server will be available.
+
+2. **Or add manually using Claude CLI:**
+   ```bash
+   # Add a project-scoped server (run from project directory)
+   claude mcp add selfie-mcp-server -s project "npm run mcp-server"
+   ```
+
+#### Method 2: Using Claude Code CLI
 ```bash
-# Add the MCP server to Claude Code (run from project directory)
+# Add the MCP server manually (run from project directory)
 claude-code add-mcp-server \
   --name selfie-mcp-server \
   --command "npm run mcp-server" \
   --working-directory "$(pwd)"
 ```
 
-#### Method 2: Manual Configuration
-Add to your Claude Code MCP configuration:
+#### Method 3: Manual Configuration
+Add to your Claude Code MCP configuration file:
 
 ```json
 {

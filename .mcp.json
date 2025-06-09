@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "selfie-mcp-server": {
+      "command": "npm",
+      "args": ["run", "mcp-server"],
+      "env": {}
+    }
+  }
+}
