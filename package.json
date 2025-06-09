@@ -9,11 +9,12 @@
     "start": "./start.sh help",
     "dev": "npm run build && node -e \"console.log(require('./dist/index.js').helloWorld())\"",
     "mcp-server": "npm run build && node dist/mcp-server/index.js",
+    "mcp-server:dev": "npm run build && node --inspect dist/mcp-server/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:mcp": "jest test/mcp-server test/mcp-client",
     "test:agents": "jest test/agents",
-    "test:integration": "jest test/mcp-server --testNamePattern=integration",
+    "test:integration": "jest test/mcp-server/integration.test.ts",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
   },
