@@ -148,7 +148,15 @@ echo -e "${GREEN}🤖 Starting developer agent for issue #$ISSUE_NUMBER...${NC}"
 echo ""
 
 # Run the developer agent
-if node "dist/agents/developer/developer-agent.js" "$ISSUE_NUMBER" "${AGENT_ARGS[@]}"; then
+if [ ${#AGENT_ARGS[@]} -eq 0 ]; then
+    # No additional arguments
+    node "dist/agents/developer/developer-agent.js" "$ISSUE_NUMBER"
+else
+    # Pass additional arguments
+    node "dist/agents/developer/developer-agent.js" "$ISSUE_NUMBER" "${AGENT_ARGS[@]}"
+fi
+
+if [ $? -eq 0 ]; then
     echo ""
     echo -e "${GREEN}✅ Developer agent completed successfully!${NC}"
     exit 0

@@ -415,11 +415,12 @@ Generate the complete file content. Do not include markdown code blocks or expla
         }
     }
 }
-// CLI entry point
-if (require.main === module) {
+// CLI entry point (ES module compatible)
+const isMainModule = process.argv[1] && process.argv[1].endsWith('developer-agent.js');
+if (isMainModule) {
     const issueNumber = parseInt(process.argv[2]);
     if (!issueNumber) {
-        console.error('Usage: developer-agent.ts <issue-number>');
+        console.error('Usage: developer-agent.js <issue-number>');
         process.exit(1);
     }
     const config = {
