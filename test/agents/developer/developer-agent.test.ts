@@ -177,7 +177,7 @@ describe('DeveloperAgent', () => {
             type: 'test'
           }
         ],
-        branchName: 'feature/test-issue',
+        branchName: 'feature/issue-123-test-issue',
         commitMessage: 'feat: add test feature',
         prTitle: 'Add test feature',
         prDescription: 'Implements test feature\n\nCloses #123'
@@ -225,6 +225,33 @@ describe('DeveloperAgent', () => {
 
       await expect(agent['generateImplementationPlan'](issueSpec))
         .rejects.toThrow('Failed to parse implementation plan');
+    });
+
+    it('should auto-correct branch name if it does not include issue number', async () => {
+      const mockPlan = {
+        files: [],
+        branchName: 'feature/bad-name', // Missing issue number
+        commitMessage: 'feat: test',
+        prTitle: 'Test',
+        prDescription: 'Test description'
+      };
+
+      mockExecSync.mockImplementation((command: string) => {
+        if (command.includes('mock-claude') && command.includes('--print')) {
+          return JSON.stringify(mockPlan);
+        }
+        return 'version info';
+      });
+
+      const issueSpec = {
+        title: 'Test Issue',
+        body: 'Test description',
+        labels: ['enhancement']
+      };
+
+      const result = await agent['generateImplementationPlan'](issueSpec);
+
+      expect(result.branchName).toBe('feature/issue-123-bad-name');
     });
   });
 

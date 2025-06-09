@@ -231,11 +231,12 @@ PROJECT CONTEXT:
 
 Please provide a JSON implementation plan with:
 1. List of files to create/modify (with descriptions)
-2. Branch name (feature/descriptive-name format)
+2. Branch name (MUST include issue number: feature/issue-${this.config.issueNumber}-descriptive-name)
 3. Commit message (conventional commits format)
 4. PR title and description
 
-Focus on:
+IMPORTANT REQUIREMENTS:
+- Branch name MUST include issue number to avoid conflicts: feature/issue-${this.config.issueNumber}-descriptive-name
 - Clean, maintainable TypeScript code
 - Comprehensive test coverage
 - Following existing project patterns
@@ -255,7 +256,7 @@ Return ONLY valid JSON in this format:
       "type": "test"
     }
   ],
-  "branchName": "feature/descriptive-name",
+  "branchName": "feature/issue-${this.config.issueNumber}-descriptive-name",
   "commitMessage": "feat: add new feature functionality",
   "prTitle": "Add new feature functionality",
   "prDescription": "Implements new feature as requested in issue #${this.config.issueNumber}\\n\\n- Feature description\\n- Implementation details\\n\\nCloses #${this.config.issueNumber}"
@@ -281,7 +282,18 @@ Return ONLY valid JSON in this format:
           cleanResult = cleanResult.replace(/^```\s*/, '').replace(/\s*```$/, '');
         }
         
-        return JSON.parse(cleanResult);
+        const plan = JSON.parse(cleanResult);
+        
+        // Validate that branch name includes issue number
+        const expectedPrefix = `feature/issue-${this.config.issueNumber}-`;
+        if (!plan.branchName || !plan.branchName.startsWith(expectedPrefix)) {
+          // Auto-correct the branch name if it doesn't follow the pattern
+          const safeName = plan.branchName?.replace(/^feature\//, '') || 'implementation';
+          plan.branchName = `feature/issue-${this.config.issueNumber}-${safeName}`;
+          console.log(`⚠️  Auto-corrected branch name to: ${plan.branchName}`);
+        }
+        
+        return plan;
       } catch (error) {
         throw new Error(`Failed to parse implementation plan: ${result}`);
       }

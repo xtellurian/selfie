@@ -193,7 +193,11 @@ The system consists of three main components:
 ### Git Workflow
 - **Main branch**: `main` (protected, requires PR)
 - **Feature branches**: `feature/agent-type-description` (e.g., `feature/initializer-github-integration`)
-- **Agent branches**: `agent/agent-name-task-id` (e.g., `agent/developer-issue-123`)
+- **Developer agent branches**: `feature/issue-{number}-description` (e.g., `feature/issue-123-add-user-auth`)
+  - **REQUIRED**: All developer agent branches MUST include the issue number to avoid naming conflicts
+  - **Format**: `feature/issue-{issueNumber}-{descriptive-name}`
+  - **Example**: Issue #456 "Add login system" → `feature/issue-456-add-login-system`
+- **Manual branches**: `agent/agent-name-task-id` (e.g., `agent/developer-issue-123`) for non-automated work
 
 ## Key Technologies
 

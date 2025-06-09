@@ -92,7 +92,7 @@ MCP_SERVER_ARGS=run mcp-server
    - Estimate complexity and effort
 
 3. **Implementation Phase**
-   - Create feature branch
+   - Create feature branch with required naming convention: `feature/issue-{number}-{description}`
    - Implement core functionality
    - Add error handling and edge cases
    - Write unit and integration tests
@@ -139,6 +139,27 @@ Brief description of what was implemented.
 
 Closes #<issue_number>
 ```
+
+### Git Workflow
+The Developer Agent follows a strict Git workflow to avoid naming conflicts and ensure traceability:
+
+**Branch Naming Convention (REQUIRED):**
+- Pattern: `feature/issue-{number}-{description}`
+- Example: `feature/issue-123-add-user-authentication`
+- Auto-correction: If Claude CLI generates an incorrect branch name, the agent automatically corrects it
+
+**Workflow Steps:**
+1. Checkout and update main branch: `git checkout main && git pull origin main`
+2. Create feature branch: `git checkout -b feature/issue-{number}-{description}`
+3. Implement changes and commit: `git add . && git commit -m "feat: {description}"`
+4. Push branch: `git push origin feature/issue-{number}-{description}`
+5. Create pull request linked to original issue
+
+**Why Issue Numbers are Required:**
+- Prevents branch naming conflicts when multiple developers work on different issues
+- Provides clear traceability from issue to implementation
+- Enables better coordination with MCP server resource management
+- Supports automated cleanup and branch management
 
 ### Error Handling
 - **Incomplete Specifications**: Comment on issue requesting clarification
