@@ -19,9 +19,14 @@ export function getSystemInfo(): { name: string; version: string; description: s
   };
 }
 
+export function multiply(a: number, b: number): number {
+  return a * b;
+}
+
 // Default export for convenience
 export default {
   helloWorld,
   getVersion,
-  getSystemInfo
+  getSystemInfo,
+  multiply
 };
