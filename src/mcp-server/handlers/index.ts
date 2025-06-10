@@ -11,8 +11,10 @@ import {
   ResourceClaim,
   ServerState,
   SelfieCoordinationMethods,
-  SelfieMethodName
+  SelfieMethodName,
+  MemoryMethodName
 } from '../types/index.js';
+import { MemoryHandlers } from './memory.js';
 import {
   generateId,
   validateInstance,
@@ -26,14 +28,24 @@ import {
 
 export class SelfieHandlers {
   private state: ServerState;
+  private memoryHandlers: MemoryHandlers;
 
   constructor() {
     this.state = {
       instances: new Map(),
       tasks: new Map(),
       resources: new Map(),
+      memory: {
+        entities: new Map(),
+        relations: new Map()
+      },
       startedAt: new Date()
     };
+
+    this.memoryHandlers = new MemoryHandlers(
+      this.state.memory.entities,
+      this.state.memory.relations
+    );
 
     // Clean up expired resources every 5 minutes
     // Skip interval setup in test environment to prevent Jest hanging
@@ -48,9 +60,9 @@ export class SelfieHandlers {
   }
 
   /**
-   * Handle MCP method calls
+   * Handle MCP method calls (including memory methods)
    */
-  async handleMethod(method: SelfieMethodName, params: unknown): Promise<unknown> {
+  async handleMethod(method: SelfieMethodName | MemoryMethodName, params: unknown): Promise<unknown> {
     // Validate parameters
     const validation = validateMethodParams(method, params);
     if (!validation.valid) {
@@ -59,6 +71,12 @@ export class SelfieHandlers {
 
     const typedParams = params as Record<string, unknown>;
 
+    // Handle memory methods
+    if (method.startsWith('selfie.memory.')) {
+      return this.memoryHandlers.handleMethod(method as MemoryMethodName, params);
+    }
+
+    // Handle coordination methods
     switch (method) {
       case 'selfie.register':
         return this.handleRegister(typedParams);

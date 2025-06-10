@@ -3,16 +3,23 @@
  *
  * Request handlers for the Selfie Model Context Protocol server.
  */
+import { MemoryHandlers } from './memory.js';
 import { generateId, validateInstance, validateTask, findAvailableInstances, checkResourceConflicts, createResourceKey, cleanupExpiredResources, validateMethodParams } from '../utils/index.js';
 export class SelfieHandlers {
     state;
+    memoryHandlers;
     constructor() {
         this.state = {
             instances: new Map(),
             tasks: new Map(),
             resources: new Map(),
+            memory: {
+                entities: new Map(),
+                relations: new Map()
+            },
             startedAt: new Date()
         };
+        this.memoryHandlers = new MemoryHandlers(this.state.memory.entities, this.state.memory.relations);
         // Clean up expired resources every 5 minutes
         // Skip interval setup in test environment to prevent Jest hanging
         if (process.env.NODE_ENV !== 'test') {
@@ -25,7 +32,7 @@ export class SelfieHandlers {
         }
     }
     /**
-     * Handle MCP method calls
+     * Handle MCP method calls (including memory methods)
      */
     async handleMethod(method, params) {
         // Validate parameters
@@ -34,6 +41,11 @@ export class SelfieHandlers {
             throw new Error(`Invalid parameters: ${validation.error}`);
         }
         const typedParams = params;
+        // Handle memory methods
+        if (method.startsWith('selfie.memory.')) {
+            return this.memoryHandlers.handleMethod(method, params);
+        }
+        // Handle coordination methods
         switch (method) {
             case 'selfie.register':
                 return this.handleRegister(typedParams);

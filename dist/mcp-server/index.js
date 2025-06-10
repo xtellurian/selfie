@@ -63,6 +63,18 @@ class SelfieMCPServer {
                         return this.handleGetStats();
                     case 'selfie_get_state':
                         return this.handleGetState();
+                    case 'selfie_memory_create_entity':
+                        return await this.handleToolCall('selfie.memory.create_entity', args);
+                    case 'selfie_memory_update_entity':
+                        return await this.handleToolCall('selfie.memory.update_entity', args);
+                    case 'selfie_memory_create_relation':
+                        return await this.handleToolCall('selfie.memory.create_relation', args);
+                    case 'selfie_memory_search_entities':
+                        return await this.handleToolCall('selfie.memory.search_entities', args);
+                    case 'selfie_memory_get_entity':
+                        return await this.handleToolCall('selfie.memory.get_entity', args);
+                    case 'selfie_memory_delete_entity':
+                        return await this.handleToolCall('selfie.memory.delete_entity', args);
                     default:
                         throw new Error(`Unknown tool: ${name}`);
                 }
@@ -339,6 +351,109 @@ class SelfieMCPServer {
                 inputSchema: {
                     type: 'object',
                     properties: {}
+                }
+            },
+            {
+                name: 'selfie_memory_create_entity',
+                description: 'Create a new memory entity for knowledge storage',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: { type: 'string', description: 'Unique entity name' },
+                        entityType: { type: 'string', description: 'Type of entity (e.g., "Component", "Pattern", "Decision")' },
+                        observations: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'List of factual observations about this entity'
+                        },
+                        metadata: {
+                            type: 'object',
+                            description: 'Additional metadata about the entity'
+                        }
+                    },
+                    required: ['name', 'entityType', 'observations']
+                }
+            },
+            {
+                name: 'selfie_memory_update_entity',
+                description: 'Update an existing memory entity with new observations',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: { type: 'string', description: 'Entity name to update' },
+                        observations: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'New observations to add'
+                        },
+                        metadata: {
+                            type: 'object',
+                            description: 'Metadata updates'
+                        }
+                    },
+                    required: ['name']
+                }
+            },
+            {
+                name: 'selfie_memory_create_relation',
+                description: 'Create a relationship between two memory entities',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        from: { type: 'string', description: 'Source entity name' },
+                        to: { type: 'string', description: 'Target entity name' },
+                        relationType: {
+                            type: 'string',
+                            enum: ['relates_to', 'caused_by', 'enables', 'contradicts', 'supports', 'implements', 'depends_on'],
+                            description: 'Type of relationship'
+                        },
+                        strength: {
+                            type: 'number',
+                            minimum: 0,
+                            maximum: 1,
+                            description: 'Relationship strength (0-1)'
+                        },
+                        metadata: {
+                            type: 'object',
+                            description: 'Additional relationship metadata'
+                        }
+                    },
+                    required: ['from', 'to', 'relationType']
+                }
+            },
+            {
+                name: 'selfie_memory_search_entities',
+                description: 'Search memory entities by name, type, or observations',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        entityName: { type: 'string', description: 'Search by entity name (partial match)' },
+                        entityType: { type: 'string', description: 'Filter by entity type' },
+                        observations: { type: 'string', description: 'Search within observations' },
+                        limit: { type: 'number', description: 'Maximum results to return' }
+                    }
+                }
+            },
+            {
+                name: 'selfie_memory_get_entity',
+                description: 'Get a specific memory entity with its relationships',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: { type: 'string', description: 'Entity name to retrieve' }
+                    },
+                    required: ['name']
+                }
+            },
+            {
+                name: 'selfie_memory_delete_entity',
+                description: 'Delete a memory entity and its relationships',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        name: { type: 'string', description: 'Entity name to delete' }
+                    },
+                    required: ['name']
                 }
             }
         ];

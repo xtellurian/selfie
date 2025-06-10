@@ -3,14 +3,15 @@
  *
  * Request handlers for the Selfie Model Context Protocol server.
  */
-import { SelfieInstance, TaskAssignment, ResourceClaim, SelfieMethodName } from '../types/index.js';
+import { SelfieInstance, TaskAssignment, ResourceClaim, SelfieMethodName, MemoryMethodName } from '../types/index.js';
 export declare class SelfieHandlers {
     private state;
+    private memoryHandlers;
     constructor();
     /**
-     * Handle MCP method calls
+     * Handle MCP method calls (including memory methods)
      */
-    handleMethod(method: SelfieMethodName, params: unknown): Promise<unknown>;
+    handleMethod(method: SelfieMethodName | MemoryMethodName, params: unknown): Promise<unknown>;
     /**
      * Register a new Selfie instance
      */

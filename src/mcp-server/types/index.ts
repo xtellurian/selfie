@@ -235,5 +235,12 @@ export interface ServerState {
   instances: Map<string, SelfieInstance>;
   tasks: Map<string, TaskAssignment>;
   resources: Map<string, ResourceClaim>;
+  memory: {
+    entities: Map<string, import('./memory.js').MemoryEntity>;
+    relations: Map<string, import('./memory.js').MemoryRelation>;
+  };
   startedAt: Date;
 }
+
+// Re-export memory types
+export * from './memory.js';

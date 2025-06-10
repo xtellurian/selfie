@@ -196,6 +196,7 @@ The system consists of three main components:
 - **Markdown**: Comprehensive documentation for all agents
 - **Shell Best Practices**: Use `set -e`, proper quoting, error handling, and dotenv loading
 - **Testing**: Unit and integration tests for all MCP server functionality
+- **Code Organization**: Keep interfaces and types segregated into different files to maintain clean, modular code structure
 
 ### Git Workflow
 - **Main branch**: `main` (protected, requires PR)
