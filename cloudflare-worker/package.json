@@ -1,0 +1,31 @@
+{
+  "name": "selfie-frontend-worker",
+  "version": "1.0.0",
+  "description": "Selfie Frontend as a Cloudflare Worker with Static Assets",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "echo 'No build step required for static assets'",
+    "test": "echo 'Tests can be added here'",
+    "preview": "wrangler dev --remote"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "selfie",
+    "frontend",
+    "mcp",
+    "agents"
+  ],
+  "author": "Selfie Project",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241218.0",
+    "wrangler": "^3.98.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
