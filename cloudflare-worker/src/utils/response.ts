@@ -22,7 +22,7 @@ export function createSuccessResponse<T extends JsonValue>(
     timestamp: new Date().toISOString(),
   };
 
-  const headers = {
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
@@ -51,8 +51,8 @@ export function createErrorResponse(
 ): Response {
   const errorResponse: ErrorResponse = {
     error,
-    code: options.code,
-    details: options.details,
+    ...(options.code && { code: options.code }),
+    ...(options.details && { details: options.details }),
     timestamp: new Date().toISOString(),
   };
 
@@ -122,13 +122,13 @@ export function createInternalErrorResponse(
   includeDetails: boolean = false
 ): Response {
   const details = includeDetails && error instanceof Error 
-    ? { message: error.message, stack: error.stack }
+    ? { message: error.message, ...(error.stack && { stack: error.stack }) }
     : undefined;
 
   return createErrorResponse('Internal server error', {
     status: 500,
     code: 'INTERNAL_ERROR',
-    details,
+    ...(details && { details }),
   });
 }
 

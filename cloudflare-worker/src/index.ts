@@ -13,7 +13,7 @@ import { addCorsHeaders } from '@/utils/response.js';
  * Main Worker export with proper typing
  */
 const worker: WorkerHandler = {
-  async fetch(request: Request, env: Env, ctx: RequestContext): Promise<Response> {
+  async fetch(request: Request, env: Env, _ctx: RequestContext): Promise<Response> {
     const url = new URL(request.url);
 
     try {

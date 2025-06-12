@@ -6,9 +6,9 @@
 
 import { SelfieBaseComponent } from './base-component.js';
 import type { AgentsStatusResponse, HealthResponse } from '@/types/api.js';
-import type { StatusCardConfig } from '@/types/components.js';
+import type { ComponentState } from '@/types/components.js';
 
-interface AlicePageState {
+interface AlicePageState extends ComponentState {
   visible: boolean;
   systemHealth?: HealthResponse;
   agentStatus?: AgentsStatusResponse;
@@ -19,7 +19,7 @@ interface AlicePageState {
 export class AlicePageComponent extends SelfieBaseComponent {
   static observedAttributes = ['visible'];
 
-  private refreshInterval?: number;
+  private refreshInterval?: number | undefined;
 
   constructor() {
     super();
@@ -29,24 +29,24 @@ export class AlicePageComponent extends SelfieBaseComponent {
     });
   }
 
-  connectedCallback(): void {
+  override connectedCallback(): void {
     super.connectedCallback();
     this.startDataRefresh();
   }
 
-  disconnectedCallback(): void {
+  override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.stopDataRefresh();
   }
 
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     if (name === 'visible') {
       this.setState({ visible: newValue === 'true' });
     }
     super.attributeChangedCallback(name, oldValue, newValue);
   }
 
-  render(): void {
+  override render(): void {
     const state = this.getState() as AlicePageState;
 
     if (!state.visible) {
@@ -65,9 +65,9 @@ export class AlicePageComponent extends SelfieBaseComponent {
     this.shadow.appendChild(template);
   }
 
-  protected attachEventListeners(): void {
-    this.addEventListener('click', this.handleNavigation, '[data-action="navigate-to-bob"]');
-    this.addEventListener('click', this.handleRefresh, '[data-action="refresh"]');
+  protected override attachEventListeners(): void {
+    this.addEventListenerWithSelector('click', this.handleNavigation, '[data-action="navigate-to-bob"]');
+    this.addEventListenerWithSelector('click', this.handleRefresh, '[data-action="refresh"]');
   }
 
   private getHtmlTemplate(state: AlicePageState): string {
@@ -367,7 +367,7 @@ export class AlicePageComponent extends SelfieBaseComponent {
     this.fetchData();
     this.refreshInterval = window.setInterval(() => {
       this.fetchData();
-    }, 30000); // Refresh every 30 seconds
+    }, 30000) as unknown as number; // Refresh every 30 seconds
   }
 
   private stopDataRefresh(): void {
@@ -385,8 +385,8 @@ export class AlicePageComponent extends SelfieBaseComponent {
       ]);
 
       if (healthResponse.ok && agentsResponse.ok) {
-        const healthData = await healthResponse.json();
-        const agentsData = await agentsResponse.json();
+        const healthData = await healthResponse.json() as { data: HealthResponse };
+        const agentsData = await agentsResponse.json() as { data: AgentsStatusResponse };
 
         this.setState({
           systemHealth: healthData.data,
@@ -407,4 +407,4 @@ export class AlicePageComponent extends SelfieBaseComponent {
 }
 
 // Define the custom element
-customElements.define('alice-page', AlicePageComponent);
+customElements.define('alice-page', AlicePageComponent as unknown as CustomElementConstructor);

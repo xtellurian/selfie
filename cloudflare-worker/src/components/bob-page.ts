@@ -6,9 +6,9 @@
 
 import { SelfieBaseComponent } from './base-component.js';
 import type { AgentsStatusResponse, AgentStatus } from '@/types/api.js';
-import type { AgentCardData } from '@/types/components.js';
+import type { ComponentState } from '@/types/components.js';
 
-interface BobPageState {
+interface BobPageState extends ComponentState {
   visible: boolean;
   agentStatus?: AgentsStatusResponse;
   loading: boolean;
@@ -19,7 +19,7 @@ interface BobPageState {
 export class BobPageComponent extends SelfieBaseComponent {
   static observedAttributes = ['visible'];
 
-  private refreshInterval?: number;
+  private refreshInterval?: number | undefined;
 
   constructor() {
     super();
@@ -29,24 +29,24 @@ export class BobPageComponent extends SelfieBaseComponent {
     });
   }
 
-  connectedCallback(): void {
+  override connectedCallback(): void {
     super.connectedCallback();
     this.startDataRefresh();
   }
 
-  disconnectedCallback(): void {
+  override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.stopDataRefresh();
   }
 
-  attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
+  override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
     if (name === 'visible') {
       this.setState({ visible: newValue === 'true' });
     }
     super.attributeChangedCallback(name, oldValue, newValue);
   }
 
-  render(): void {
+  override render(): void {
     const state = this.getState() as BobPageState;
 
     if (!state.visible) {
@@ -65,10 +65,10 @@ export class BobPageComponent extends SelfieBaseComponent {
     this.shadow.appendChild(template);
   }
 
-  protected attachEventListeners(): void {
-    this.addEventListener('click', this.handleNavigation, '[data-action="navigate-to-alice"]');
-    this.addEventListener('click', this.handleRefresh, '[data-action="refresh"]');
-    this.addEventListener('click', this.handleAgentSelect, '[data-agent-name]');
+  protected override attachEventListeners(): void {
+    this.addEventListenerWithSelector('click', this.handleNavigation, '[data-action="navigate-to-alice"]');
+    this.addEventListenerWithSelector('click', this.handleRefresh, '[data-action="refresh"]');
+    this.addEventListenerWithSelector('click', this.handleAgentSelect, '[data-agent-name]');
   }
 
   private getHtmlTemplate(state: BobPageState): string {
@@ -587,7 +587,7 @@ export class BobPageComponent extends SelfieBaseComponent {
     this.fetchData();
     this.refreshInterval = window.setInterval(() => {
       this.fetchData();
-    }, 30000); // Refresh every 30 seconds
+    }, 30000) as unknown as number; // Refresh every 30 seconds
   }
 
   private stopDataRefresh(): void {
@@ -602,7 +602,7 @@ export class BobPageComponent extends SelfieBaseComponent {
       const response = await fetch('/api/agents/status');
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await response.json() as { data: AgentsStatusResponse };
         this.setState({
           agentStatus: data.data,
           loading: false,
@@ -621,4 +621,4 @@ export class BobPageComponent extends SelfieBaseComponent {
 }
 
 // Define the custom element
-customElements.define('bob-page', BobPageComponent);
+customElements.define('bob-page', BobPageComponent as unknown as CustomElementConstructor);

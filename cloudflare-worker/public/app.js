@@ -49,7 +49,7 @@ var SelfieBaseComponent = class extends HTMLElement {
   /**
    * Add event listener with automatic cleanup
    */
-  addEventListener(type, handler, selector) {
+  addEventListenerWithSelector(type, handler, selector) {
     const wrappedHandler = (event) => {
       if (selector) {
         const target = event.target;
@@ -157,8 +157,8 @@ var AlicePageComponent = class extends SelfieBaseComponent {
     this.shadow.appendChild(template);
   }
   attachEventListeners() {
-    this.addEventListener("click", this.handleNavigation, '[data-action="navigate-to-bob"]');
-    this.addEventListener("click", this.handleRefresh, '[data-action="refresh"]');
+    this.addEventListenerWithSelector("click", this.handleNavigation, '[data-action="navigate-to-bob"]');
+    this.addEventListenerWithSelector("click", this.handleRefresh, '[data-action="refresh"]');
   }
   getHtmlTemplate(state) {
     return `
@@ -518,9 +518,9 @@ var BobPageComponent = class extends SelfieBaseComponent {
     this.shadow.appendChild(template);
   }
   attachEventListeners() {
-    this.addEventListener("click", this.handleNavigation, '[data-action="navigate-to-alice"]');
-    this.addEventListener("click", this.handleRefresh, '[data-action="refresh"]');
-    this.addEventListener("click", this.handleAgentSelect, "[data-agent-name]");
+    this.addEventListenerWithSelector("click", this.handleNavigation, '[data-action="navigate-to-alice"]');
+    this.addEventListenerWithSelector("click", this.handleRefresh, '[data-action="refresh"]');
+    this.addEventListenerWithSelector("click", this.handleAgentSelect, "[data-agent-name]");
   }
   getHtmlTemplate(state) {
     return `

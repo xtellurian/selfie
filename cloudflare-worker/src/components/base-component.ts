@@ -7,7 +7,7 @@ import type { BaseComponent, ComponentState, EventHandler } from '@/types/compon
 /**
  * Abstract base class for all Selfie web components
  */
-export abstract class SelfieBaseComponent extends HTMLElement implements BaseComponent {
+export abstract class SelfieBaseComponent extends HTMLElement {
   protected shadow: ShadowRoot;
   protected state: ComponentState = {};
   private eventListeners: Map<string, EventHandler[]> = new Map();
@@ -69,7 +69,7 @@ export abstract class SelfieBaseComponent extends HTMLElement implements BaseCom
   /**
    * Add event listener with automatic cleanup
    */
-  protected addEventListener<K extends keyof HTMLElementEventMap>(
+  protected addEventListenerWithSelector<K extends keyof HTMLElementEventMap>(
     type: K,
     handler: EventHandler<HTMLElementEventMap[K]>,
     selector?: string
@@ -126,14 +126,14 @@ export abstract class SelfieBaseComponent extends HTMLElement implements BaseCom
   /**
    * Query element in shadow DOM
    */
-  protected querySelector<T extends HTMLElement>(selector: string): T | null {
+  public override querySelector<T extends HTMLElement>(selector: string): T | null {
     return this.shadow.querySelector(selector) as T | null;
   }
 
   /**
    * Query all elements in shadow DOM
    */
-  protected querySelectorAll<T extends HTMLElement>(selector: string): NodeListOf<T> {
+  public override querySelectorAll<T extends HTMLElement>(selector: string): NodeListOf<T> {
     return this.shadow.querySelectorAll(selector) as NodeListOf<T>;
   }
 
