@@ -9,6 +9,10 @@
       "command": "npx",
       "args": ["playwright-mcp-server"],
       "env": {}
+    },
+    "browsermcp": {
+      "command": "npx",
+      "args": ["@browsermcp/mcp@latest"]
     }
   }
 }
