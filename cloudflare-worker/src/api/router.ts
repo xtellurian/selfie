@@ -6,6 +6,7 @@ import type { Env } from '@/types/env.js';
 import type { ApiResponse, ErrorResponse } from '@/types/api.js';
 import { handleHealthCheck } from './health.js';
 import { handleAgentsStatus } from './agents.js';
+import { handleChatCompletion, handleChatStream, handleChatWithFunctions, handleModels } from './chat.js';
 
 /**
  * Route API requests to appropriate handlers
@@ -32,6 +33,28 @@ export async function handleApiRequest(
     // Agents list endpoint (alias for status)
     if (pathname === '/api/agents' && method === 'GET') {
       return handleAgentsStatus(request, env);
+    }
+
+    // Chat endpoints
+    if (pathname === '/api/chat/completions') {
+      if (method === 'POST') {
+        return handleChatCompletion(request, env);
+      }
+      if (method === 'OPTIONS') {
+        return handleCorsOptions();
+      }
+    }
+
+    if (pathname === '/api/chat/stream' && method === 'POST') {
+      return handleChatStream(request, env);
+    }
+
+    if (pathname === '/api/chat/functions' && method === 'POST') {
+      return handleChatWithFunctions(request, env);
+    }
+
+    if (pathname === '/api/models' && method === 'GET') {
+      return handleModels(request, env);
     }
 
     // System info endpoint
@@ -68,6 +91,10 @@ async function handleSystemInfo(
       '/api/health',
       '/api/agents/status',
       '/api/agents',
+      '/api/chat/completions',
+      '/api/chat/stream',
+      '/api/chat/functions',
+      '/api/models',
       '/api/system',
     ],
   };
@@ -99,6 +126,10 @@ function handleNotFound(pathname: string, method: string): Response {
         'GET /api/health',
         'GET /api/agents/status',
         'GET /api/agents',
+        'POST /api/chat/completions',
+        'POST /api/chat/stream',
+        'POST /api/chat/functions',
+        'GET /api/models',
         'GET /api/system',
       ],
       requestedPath: pathname,
@@ -111,6 +142,24 @@ function handleNotFound(pathname: string, method: string): Response {
     status: 404,
     headers: {
       'Content-Type': 'application/json',
+    },
+  });
+}
+
+/**
+ * Handle internal server errors
+ */
+/**
+ * Handle CORS preflight requests
+ */
+function handleCorsOptions(): Response {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
     },
   });
 }

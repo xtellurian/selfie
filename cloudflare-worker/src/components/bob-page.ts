@@ -98,14 +98,24 @@ export class BobPageComponent extends SelfieBaseComponent {
         </div>
         
         <div class="features">
-          <h3>Bob's Control Systems</h3>
-          <ul>
-            <li>🎛️ Coordinate multiple Selfie instances across networks</li>
-            <li>📋 Review and approve automated pull requests</li>
-            <li>📊 Monitor development task queues and priorities</li>
-            <li>🔄 Manage system health and performance metrics</li>
-            <li>🌐 Oversee MCP server coordination protocols</li>
-          </ul>
+          <div class="features-grid">
+            <div class="feature-section">
+              <h3>Bob's Control Systems</h3>
+              <ul>
+                <li>🎛️ Coordinate multiple Selfie instances across networks</li>
+                <li>📋 Review and approve automated pull requests</li>
+                <li>📊 Monitor development task queues and priorities</li>
+                <li>🔄 Manage system health and performance metrics</li>
+                <li>🌐 Oversee MCP server coordination protocols</li>
+              </ul>
+            </div>
+            
+            <div class="feature-section">
+              <h3>💬 Chat with Bob</h3>
+              <p>Discuss coordination strategies, workflow optimization, and system architecture with Bob.</p>
+              <chat-interface agent="bob"></chat-interface>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -524,17 +534,32 @@ export class BobPageComponent extends SelfieBaseComponent {
         margin-top: 30px;
       }
       
-      .features h3 {
-        color: #555;
-        font-size: 1.3rem;
+      .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
       }
       
-      .features ul {
+      @media (max-width: 1024px) {
+        .features-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+      
+      .feature-section h3 {
+        color: #555;
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+      }
+      
+      .feature-section ul {
         list-style: none;
         padding: 0;
       }
       
-      .features li {
+      .feature-section li {
         margin: 12px 0;
         padding: 12px 15px;
         background: #f8f9fa;
@@ -543,9 +568,15 @@ export class BobPageComponent extends SelfieBaseComponent {
         transition: all 0.2s ease;
       }
       
-      .features li:hover {
+      .feature-section li:hover {
         background: #e9ecef;
         transform: translateX(5px);
+      }
+      
+      .feature-section p {
+        color: #666;
+        margin-bottom: 15px;
+        line-height: 1.5;
       }
       
       small {

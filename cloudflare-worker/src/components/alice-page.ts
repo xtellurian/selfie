@@ -95,14 +95,24 @@ export class AlicePageComponent extends SelfieBaseComponent {
         </button>
         
         <div class="features">
-          <h3>Alice's Capabilities</h3>
-          <ul>
-            <li>📊 Monitor Selfie agent status and health</li>
-            <li>🎯 Create and track development tasks</li>
-            <li>🔌 View active MCP server connections</li>
-            <li>📝 Manage GitHub issue integration</li>
-            <li>🔍 Real-time system monitoring</li>
-          </ul>
+          <div class="features-grid">
+            <div class="feature-section">
+              <h3>Alice's Capabilities</h3>
+              <ul>
+                <li>📊 Monitor Selfie agent status and health</li>
+                <li>🎯 Create and track development tasks</li>
+                <li>🔌 View active MCP server connections</li>
+                <li>📝 Manage GitHub issue integration</li>
+                <li>🔍 Real-time system monitoring</li>
+              </ul>
+            </div>
+            
+            <div class="feature-section">
+              <h3>💬 Chat with Alice</h3>
+              <p>Ask Alice about system status, agent coordination, or development workflows.</p>
+              <chat-interface agent="alice"></chat-interface>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -319,17 +329,32 @@ export class AlicePageComponent extends SelfieBaseComponent {
         margin-top: 30px;
       }
       
-      .features h3 {
-        color: #555;
-        font-size: 1.3rem;
+      .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
       }
       
-      .features ul {
+      @media (max-width: 1024px) {
+        .features-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+      
+      .feature-section h3 {
+        color: #555;
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+      }
+      
+      .feature-section ul {
         list-style: none;
         padding: 0;
       }
       
-      .features li {
+      .feature-section li {
         margin: 12px 0;
         padding: 12px 15px;
         background: #f8f9fa;
@@ -338,9 +363,15 @@ export class AlicePageComponent extends SelfieBaseComponent {
         transition: all 0.2s ease;
       }
       
-      .features li:hover {
+      .feature-section li:hover {
         background: #e9ecef;
         transform: translateX(5px);
+      }
+      
+      .feature-section p {
+        color: #666;
+        margin-bottom: 15px;
+        line-height: 1.5;
       }
       
       small {

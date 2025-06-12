@@ -8,11 +8,23 @@
     "not_found_handling": "single-page-application",
     "binding": "ASSETS"
   },
+  "ai": {
+    "binding": "AI"
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
   },
   "vars": {
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "production",
+    "NODE_ENV": "production"
+  },
+  "env": {
+    "development": {
+      "vars": {
+        "ENVIRONMENT": "development",
+        "NODE_ENV": "development"
+      }
+    }
   }
 }

@@ -6,8 +6,16 @@ export interface Env {
   /** Static assets binding for serving frontend files */
   readonly ASSETS: Fetcher;
   
+  /** Cloudflare AI binding for Workers AI */
+  readonly AI: any;
+  
   /** Environment configuration */
   readonly ENVIRONMENT?: 'development' | 'staging' | 'production';
+  readonly NODE_ENV?: string;
+  
+  /** Cloudflare AI credentials for local development */
+  readonly CLOUDFLARE_API_TOKEN?: string;
+  readonly CLOUDFLARE_ACCOUNT_ID?: string;
   
   /** MCP Server URL for agent coordination */
   readonly MCP_SERVER_URL?: string;

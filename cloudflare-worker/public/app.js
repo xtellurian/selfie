@@ -185,14 +185,24 @@ var AlicePageComponent = class extends SelfieBaseComponent {
         </button>
         
         <div class="features">
-          <h3>Alice's Capabilities</h3>
-          <ul>
-            <li>\u{1F4CA} Monitor Selfie agent status and health</li>
-            <li>\u{1F3AF} Create and track development tasks</li>
-            <li>\u{1F50C} View active MCP server connections</li>
-            <li>\u{1F4DD} Manage GitHub issue integration</li>
-            <li>\u{1F50D} Real-time system monitoring</li>
-          </ul>
+          <div class="features-grid">
+            <div class="feature-section">
+              <h3>Alice's Capabilities</h3>
+              <ul>
+                <li>\u{1F4CA} Monitor Selfie agent status and health</li>
+                <li>\u{1F3AF} Create and track development tasks</li>
+                <li>\u{1F50C} View active MCP server connections</li>
+                <li>\u{1F4DD} Manage GitHub issue integration</li>
+                <li>\u{1F50D} Real-time system monitoring</li>
+              </ul>
+            </div>
+            
+            <div class="feature-section">
+              <h3>\u{1F4AC} Chat with Alice</h3>
+              <p>Ask Alice about system status, agent coordination, or development workflows.</p>
+              <chat-interface agent="alice"></chat-interface>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -399,17 +409,32 @@ var AlicePageComponent = class extends SelfieBaseComponent {
         margin-top: 30px;
       }
       
-      .features h3 {
-        color: #555;
-        font-size: 1.3rem;
+      .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
       }
       
-      .features ul {
+      @media (max-width: 1024px) {
+        .features-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+      
+      .feature-section h3 {
+        color: #555;
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+      }
+      
+      .feature-section ul {
         list-style: none;
         padding: 0;
       }
       
-      .features li {
+      .feature-section li {
         margin: 12px 0;
         padding: 12px 15px;
         background: #f8f9fa;
@@ -418,9 +443,15 @@ var AlicePageComponent = class extends SelfieBaseComponent {
         transition: all 0.2s ease;
       }
       
-      .features li:hover {
+      .feature-section li:hover {
         background: #e9ecef;
         transform: translateX(5px);
+      }
+      
+      .feature-section p {
+        color: #666;
+        margin-bottom: 15px;
+        line-height: 1.5;
       }
       
       small {
@@ -549,14 +580,24 @@ var BobPageComponent = class extends SelfieBaseComponent {
         </div>
         
         <div class="features">
-          <h3>Bob's Control Systems</h3>
-          <ul>
-            <li>\u{1F39B}\uFE0F Coordinate multiple Selfie instances across networks</li>
-            <li>\u{1F4CB} Review and approve automated pull requests</li>
-            <li>\u{1F4CA} Monitor development task queues and priorities</li>
-            <li>\u{1F504} Manage system health and performance metrics</li>
-            <li>\u{1F310} Oversee MCP server coordination protocols</li>
-          </ul>
+          <div class="features-grid">
+            <div class="feature-section">
+              <h3>Bob's Control Systems</h3>
+              <ul>
+                <li>\u{1F39B}\uFE0F Coordinate multiple Selfie instances across networks</li>
+                <li>\u{1F4CB} Review and approve automated pull requests</li>
+                <li>\u{1F4CA} Monitor development task queues and priorities</li>
+                <li>\u{1F504} Manage system health and performance metrics</li>
+                <li>\u{1F310} Oversee MCP server coordination protocols</li>
+              </ul>
+            </div>
+            
+            <div class="feature-section">
+              <h3>\u{1F4AC} Chat with Bob</h3>
+              <p>Discuss coordination strategies, workflow optimization, and system architecture with Bob.</p>
+              <chat-interface agent="bob"></chat-interface>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -962,17 +1003,32 @@ var BobPageComponent = class extends SelfieBaseComponent {
         margin-top: 30px;
       }
       
-      .features h3 {
-        color: #555;
-        font-size: 1.3rem;
+      .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        align-items: start;
       }
       
-      .features ul {
+      @media (max-width: 1024px) {
+        .features-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+      }
+      
+      .feature-section h3 {
+        color: #555;
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+      }
+      
+      .feature-section ul {
         list-style: none;
         padding: 0;
       }
       
-      .features li {
+      .feature-section li {
         margin: 12px 0;
         padding: 12px 15px;
         background: #f8f9fa;
@@ -981,9 +1037,15 @@ var BobPageComponent = class extends SelfieBaseComponent {
         transition: all 0.2s ease;
       }
       
-      .features li:hover {
+      .feature-section li:hover {
         background: #e9ecef;
         transform: translateX(5px);
+      }
+      
+      .feature-section p {
+        color: #666;
+        margin-bottom: 15px;
+        line-height: 1.5;
       }
       
       small {
