@@ -33,7 +33,7 @@ export class ChatInterfaceComponent extends SelfieBaseComponent {
   }
 
   override attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null): void {
-    if (name === 'agent' && newValue) {
+    if (name === 'agent' && newValue && oldValue !== newValue) {
       this.setState({ 
         agent: newValue as 'alice' | 'bob',
         messages: [], // Clear messages when agent changes
