@@ -1,14 +1,21 @@
 {
   "name": "selfie-frontend-worker",
-  "version": "1.0.0",
-  "description": "Selfie Frontend as a Cloudflare Worker with Static Assets",
+  "version": "2.0.0",
+  "description": "Selfie Frontend as a TypeScript Cloudflare Worker with modular architecture",
   "main": "src/index.ts",
+  "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "build": "echo 'No build step required for static assets'",
+    "build": "tsc && npm run build:frontend",
+    "build:frontend": "node scripts/build-frontend.mjs",
+    "build:watch": "tsc --watch",
+    "dev": "npm run build:frontend && wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "preview": "npm run build && wrangler dev --remote",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    "lint": "echo 'Linting can be added with ESLint'",
     "test": "echo 'Tests can be added here'",
-    "preview": "wrangler dev --remote"
+    "clean": "rm -rf dist public/app.js public/app.js.map"
   },
   "keywords": [
     "cloudflare",
@@ -16,14 +23,16 @@
     "selfie",
     "frontend",
     "mcp",
-    "agents"
+    "agents",
+    "typescript"
   ],
   "author": "Selfie Project",
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241218.0",
     "wrangler": "^3.98.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "esbuild": "^0.20.0"
   },
   "engines": {
     "node": ">=18.0.0"

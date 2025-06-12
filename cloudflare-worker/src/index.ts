@@ -1,51 +1,94 @@
-// Cloudflare Worker for Selfie Frontend
+/**
+ * Selfie Frontend Cloudflare Worker
+ * 
+ * A TypeScript-based Cloudflare Worker that serves the Selfie Frontend
+ * with a robust API layer for MCP server integration.
+ */
 
-interface Env {
-  ASSETS: Fetcher;
-}
+import type { Env, WorkerHandler, RequestContext } from '@/types/env.js';
+import { handleApiRequest } from '@/api/router.js';
+import { addCorsHeaders } from '@/utils/response.js';
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+/**
+ * Main Worker export with proper typing
+ */
+const worker: WorkerHandler = {
+  async fetch(request: Request, env: Env, ctx: RequestContext): Promise<Response> {
     const url = new URL(request.url);
 
-    // Handle API routes for future backend integration
-    if (url.pathname.startsWith("/api/")) {
-      return handleApiRequest(request, url);
-    }
+    try {
+      // Handle CORS preflight requests
+      if (request.method === 'OPTIONS') {
+        return handleCorsPreflightRequest(request);
+      }
 
-    // Serve static assets and handle SPA routing
-    return env.ASSETS.fetch(request);
+      // Handle API routes
+      if (url.pathname.startsWith('/api/')) {
+        const response = await handleApiRequest(request, env);
+        return addCorsHeaders(response);
+      }
+
+      // Serve static assets and handle SPA routing
+      const response = await env.ASSETS.fetch(request);
+      
+      // Add security headers to static assets
+      return addSecurityHeaders(response);
+    } catch (error) {
+      // Log error for monitoring
+      console.error('Worker error:', error);
+      
+      // Return a generic error response
+      return new Response('Internal Server Error', {
+        status: 500,
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+      });
+    }
   },
 };
 
-async function handleApiRequest(_request: Request, url: URL): Promise<Response> {
-  // Future API endpoints for Selfie MCP server integration
-  
-  if (url.pathname === "/api/health") {
-    return Response.json({ 
-      status: "healthy", 
-      timestamp: new Date().toISOString(),
-      service: "Selfie Frontend Worker",
-      version: "1.0.0"
-    });
-  }
-
-  if (url.pathname === "/api/agents/status") {
-    // Mock agent status - can be connected to real MCP server later
-    return Response.json({
-      agents: [
-        { name: "initializer", status: "monitoring", lastSeen: new Date().toISOString() },
-        { name: "developer", status: "available", lastSeen: new Date().toISOString() },
-        { name: "reviewer", status: "idle", lastSeen: new Date().toISOString() },
-        { name: "tester", status: "idle", lastSeen: new Date().toISOString() }
-      ],
-      totalAgents: 4,
-      activeConnections: 2
-    });
-  }
-
-  return Response.json(
-    { error: "API endpoint not found" },
-    { status: 404, headers: { "Content-Type": "application/json" } }
-  );
+/**
+ * Handle CORS preflight requests
+ */
+function handleCorsPreflightRequest(_request: Request): Response {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400', // 24 hours
+    },
+  });
 }
+
+/**
+ * Add security headers to responses
+ */
+function addSecurityHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  
+  // Security headers
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-XSS-Protection', '1; mode=block');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  headers.set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  // Content Security Policy for static assets
+  if (response.headers.get('Content-Type')?.includes('text/html')) {
+    headers.set(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'"
+    );
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+export default worker;
