@@ -9,6 +9,7 @@
 // Import all components to register them as custom elements
 import '../components/alice-page.js';
 import '../components/bob-page.js';
+import '../components/chat-interface.js';
 
 // Initialize application
 class SelfieApp {
